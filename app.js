@@ -30,21 +30,35 @@ function moth(){return {colors:[rnd(PALETTE.length),rnd(PALETTE.length),rnd(PALE
 function position(i){return [155+(i%6)*158,195+Math.floor(i/6)*195];}
 function makeForest(){const patches=[],leaves=[];for(let i=0;i<180;i++){const x=95+Math.random()*910,y=125+Math.random()*540,rx=15+rnd(38),ry=12+rnd(27);const left=110-(y-80)*100/620,right=990+(y-80)*100/620;if(x>left+rx+10&&x<right-rx-10)patches.push({x,y,rx,ry,color:rnd(BARK.length)});}for(let i=0;i<38;i++){const x=35+rnd(1031),y=-55+rnd(281),rx=18+rnd(38),ry=15+rnd(24);if(((x-550)/515)**2+((y-70)/165)**2<=1)leaves.push({x,y,rx,ry,color:rnd(LEAVES.length)});}return {base:rnd(BARK.length),patches,leaves};}
 function treeColor(x,y){for(let i=state.forest.patches.length-1;i>=0;i--){const p=state.forest.patches[i];if(((x-p.x)/p.rx)**2+((y-p.y)/p.ry)**2<=1)return BARK[p.color];}return BARK[state.forest.base];}
-function colorError(m,i){const [cx,cy]=position(i);let total=0,count=0;for(const side of [-1,1])for(let px=0;px<54;px+=3)for(let py=0;py<36;py+=3){if(py>36*(1-px/54)+7)continue;const bg=treeColor(cx+side*(7+px*.72),cy-5+py*.72),fg=PALETTE[m.colors[Math.floor(px/9)%3]];total+=Math.abs(bg[0]-fg[0])+Math.abs(bg[1]-fg[1])+Math.abs(bg[2]-fg[2]);count+=3;}return total/Math.max(count,1);}
-function evaluate(){state.moths.forEach((m,i)=>{let score=99.9/(1+Math.exp((colorError(m,i)-65)/8));m.score=state.generation===1?Math.min(score,70):score;});state.best.push(Math.max(...state.moths.map(m=>m.score)));state.avg.push(state.moths.reduce((a,m)=>a+m.score,0)/POP_SIZE);}
-function selectParent(){const weights=state.moths.map(m=>(m.score||0)+1),total=weights.reduce((a,b)=>a+b,0);let r=Math.random()*total;for(let i=0;i<weights.length;i++){r-=weights[i];if(r<=0)return i;}return weights.length-1;}
+function sampleDetails(m,i){
+  const groups=Array.from({length:3},()=>({total:0,channels:0,samples:0,background:[0,0,0]}));
+  for(let slot=0;slot<POP_SIZE;slot++)for(const side of [-1,1])for(let px=0;px<54;px+=3)for(let py=0;py<36;py+=3){
+    if(py>36*(1-px/54)+7)continue;
+    const [cx,cy]=position(slot);
+    const gene=Math.floor(px/9)%3,bg=treeColor(cx+side*(7+px*.72),cy-5+py*.72),fg=PALETTE[m.colors[gene]],group=groups[gene];
+    for(let channel=0;channel<3;channel++){group.total+=Math.abs(bg[channel]-fg[channel]);group.background[channel]+=bg[channel];group.channels++;}
+    group.samples++;
+  }
+  const total=groups.reduce((sum,g)=>sum+g.total,0),channels=groups.reduce((sum,g)=>sum+g.channels,0);
+  return {mean:total/Math.max(channels,1),samples:groups.reduce((sum,g)=>sum+g.samples,0),groups:groups.map(g=>({...g,mean:g.total/Math.max(g.channels,1),background:g.background.map(v=>Math.round(v/Math.max(g.samples,1)))}))};
+}
+function colorError(m,i){return sampleDetails(m,i).mean;}
+function evaluate(){state.moths.forEach((m,i)=>{m.score=99.9/(1+Math.exp((colorError(m,i)-65)/8));});state.best.push(Math.max(...state.moths.map(m=>m.score)));state.avg.push(state.moths.reduce((a,m)=>a+m.score,0)/POP_SIZE);}
+function selectParent(){const weights=state.moths.map(m=>(m.score||0)+1),total=weights.reduce((a,b)=>a+b,0),draw=Math.random()*total;let remaining=draw;for(let i=0;i<weights.length;i++){remaining-=weights[i];if(remaining<=0)return {index:i,draw,total};}return {index:weights.length-1,draw,total};}
 function stopAuto(){if(autoTimer){clearInterval(autoTimer);autoTimer=null;}$('auto').textContent='자동 진행 ▷';$('detail-auto').textContent='자동 진행 ▷';}
-function reset(){stopAuto();state={forest:makeForest(),generation:1,phase:'initial',moths:Array.from({length:POP_SIZE},moth),parents:[],children:[],best:[],avg:[],selected:null,trace:{},focusChild:1};history=[clone(state)];cursor=0;render();}
+function reset(){stopAuto();state={forest:makeForest(),generation:1,phase:'initial',moths:Array.from({length:POP_SIZE},moth),parents:[],children:[],best:[],avg:[],selected:null,guess:null,trace:{},focusChild:1};history=[clone(state)];cursor=0;render();}
 function save(){history=history.slice(0,cursor+1);history.push(clone(state));cursor=history.length-1;render();}
 function restore(i){if(i<0||i>=history.length)return;state=clone(history[i]);cursor=i;render();}
 function step(){
   if(cursor<history.length-1){restore(cursor+1);return;}
   switch(state.phase){
     case 'initial': evaluate();state.phase='evaluated';break;
-    case 'evaluated':case 'replaced':
-      state.parents=[selectParent(),selectParent()];
-      state.trace={parentWeights:state.moths.map(m=>m.score+1),parentMoths:state.parents.map(i=>clone(state.moths[i]))};
+    case 'evaluated':case 'replaced':{
+      const draws=[selectParent(),selectParent()];
+      state.parents=draws.map(d=>d.index);
+      state.trace={draws,parentWeights:state.moths.map(m=>m.score+1),parentMoths:state.parents.map(i=>clone(state.moths[i]))};
       state.phase='selected';break;
+    }
     case 'selected':{
       const [a,b]=state.parents.map(i=>state.moths[i]);
       const eliteIndex=state.moths.findIndex(m=>m.score===Math.max(...state.moths.map(x=>x.score)));
@@ -82,15 +96,24 @@ function drawChart(){const c=$('chart'),ctx=c.getContext('2d'),w=c.width,h=c.hei
 function render(){const p=PHASES[state.phase];$('generation').innerHTML=`${String(state.generation).padStart(2,'0')} <small>/ 10</small>`;$('phase-title').textContent=p[0];$('phase-description').textContent=p[1];$('tip').textContent=p[2];$('previous').disabled=cursor===0;$('next').disabled=state.phase==='finished'&&cursor===history.length-1;$('scene-count').textContent=`장면 ${cursor+1} / ${history.length}`;$('scene-range').max=Math.max(0,history.length-1);$('scene-range').value=cursor;const stages=['평가','선택','교차','변이','교체'];const active={initial:-1,evaluated:0,selected:1,crossed:2,mutated:3,replaced:4,finished:4}[state.phase];$('stage-steps').innerHTML=stages.map((s,i)=>`<span class="${i===active?'current':''}">${s}</span>`).join('');if(state.selected===null){$('moth-heading').textContent='나방을 선택하세요';$('moth-info').textContent='나방을 누르면 날개 색 유전자와 위장 점수를 볼 수 있습니다.';$('genes').replaceChildren();}else{const m=state.moths[state.selected];$('moth-heading').textContent=`나방 ${String(state.selected+1).padStart(2,'0')}`;$('moth-info').textContent=`위장 점수 ${m.score===null?'평가 전':m.score.toFixed(1)+'%'} · 반점 ${m.spots}개`;$('genes').innerHTML=m.colors.map((v,i)=>`<div class="gene"><i class="swatch" style="background:${rgb(PALETTE[v])}"></i>날개 색 ${i+1}<strong>${rgb(PALETTE[v])}</strong></div>`).join('');}drawForest();drawChart();renderTrace();}
 const traceOrder=['initial','evaluated','selected','crossed','mutated','replaced'];
 const traceNames=['시작','평가','선택','교차','변이','교체'];
+const traceQuestions={initial:'어느 나방이 숲에 가장 잘 숨을까요?',evaluated:'예상과 실제 점수는 어떻게 달랐나요?',selected:'점수가 높은 나방은 왜 부모로 뽑히기 쉬울까요?',crossed:'자손의 날개 색은 어느 부모에게서 왔나요?',mutated:'어떤 유전자가 바뀌었고 새 점수에 어떤 영향을 줄까요?',replaced:'이번 세대의 최고 해는 이전 세대보다 좋아졌나요?',finished:'어떤 단계가 가장 좋은 날개 색을 찾는 데 기여했나요?'};
 const geneNames=['날개 1','날개 2','날개 3','반점'];
 function geneValue(m,j){return j===3?`${m.spots}개`:`#${PALETTE[m.colors[j]].map(v=>v.toString(16).padStart(2,'0')).join('')}`;}
 function geneChip(m,j){return j===3?`<span class="trace-spot">${m.spots}개</span>`:`<i class="trace-swatch" style="background:${rgb(PALETTE[m.colors[j]])}"></i><code>${geneValue(m,j)}</code>`;}
 function geneRows(m,source=null,before=null){return `<div class="trace-gene-list">${geneNames.map((name,j)=>`<div class="trace-gene-row"><span>${name}</span><div>${geneChip(m,j)}</div>${source?`<small>${source[j]}</small>`:''}${before?`<small class="${m.mutations.includes(j)?'changed':'same'}">${geneValue(before,j)} → ${geneValue(m,j)}</small>`:''}</div>`).join('')}</div>`;}
 function focusMoth(i){return state.moths[i]||state.moths[0];}
+function evaluationMarkup(m,i,phase){
+  const visual=`<div class="trace-observe"><canvas id="focus-canvas" width="500" height="250" aria-label="선택한 나방의 날개와 나무껍질"></canvas><div class="trace-observe-copy"><span class="trace-tag">SOLUTION ${String(i+1).padStart(2,'0')}</span><h3>나방 ${i+1}번의 유전자</h3><p>날개 색 3개가 점수 계산에 쓰입니다. 모든 나방을 숲의 동일한 표본 지점으로 비교합니다. 반점 수는 유전되지만 현재 점수에는 영향을 주지 않습니다.</p>${geneRows(m)}</div></div>`;
+  if(phase==='initial')return `${visual}<div class="trace-prediction"><span class="trace-tag">먼저 예상해 보세요</span><h3>어떤 나방이 가장 잘 숨을까요?</h3><p>오른쪽에서 한 마리를 고른 뒤 ‘다음 장면’을 눌러 실제 점수를 확인하세요. ${state.guess===null?'아직 고르지 않았습니다.':`현재 예상: 나방 ${state.guess+1}번`}</p></div>`;
+  const details=sampleDetails(m,i),best=Math.max(...state.moths.map(x=>x.score)),correct=state.guess!==null&&Math.abs(state.moths[state.guess].score-best)<1e-9;
+  const feedback=state.guess===null?'선택하지 않고 평가를 진행했습니다. 오른쪽에서 나방을 골라 계산 과정을 비교해 보세요.':`예상한 나방 ${state.guess+1}번의 점수는 ${state.moths[state.guess].score.toFixed(1)}%입니다. ${correct?'이번 세대의 최고 점수를 맞혔습니다.':`최고 점수는 ${best.toFixed(1)}%입니다. 다른 색 조합이 더 잘 숨었습니다.`}`;
+  return `${visual}<div class="trace-prediction revealed"><span class="trace-tag">예상과 결과 비교</span><p>${feedback}</p></div><h3 class="trace-subtitle">날개 색을 실제 배경과 비교</h3><div class="trace-table-wrap"><table class="trace-table trace-sample-table"><thead><tr><th>유전자</th><th>나방 날개</th><th>배경 평균색</th><th>표본 수</th><th>평균 RGB 차이</th></tr></thead><tbody>${details.groups.map((g,j)=>`<tr><td>날개 ${j+1}</td><td><i class="trace-swatch" style="background:${rgb(PALETTE[m.colors[j]])}"></i>${geneValue(m,j)}</td><td><i class="trace-swatch" style="background:${rgb(g.background)}"></i>${rgb(g.background)}</td><td>${g.samples}</td><td>${g.mean.toFixed(2)}</td></tr>`).join('')}</tbody></table></div><div class="trace-math"><div><span>① 전체 색 차이</span><strong>${details.mean.toFixed(2)}</strong><small>${details.samples}개 위치에서 RGB 채널별 절댓값 차이를 평균</small></div><div><span>② 위장 점수</span><strong>${m.score.toFixed(1)}%</strong><small>99.9 ÷ (1 + e<sup>(${details.mean.toFixed(2)} − 65) ÷ 8</sup>)</small></div></div><p class="trace-explain">이 식은 이 교육 모형에서 정한 점수 규칙입니다. 색 차이가 작을수록 점수가 높습니다. 다른 나방을 선택해 같은 계산을 비교해 보세요.</p>`;
+}
 function renderTrace(){
   const phase=state.phase,info=PHASES[phase],stage=phase==='finished'?5:traceOrder.indexOf(phase);
   $('trace-step-number').textContent=`STEP ${String(stage+1).padStart(2,'0')}`;
   $('trace-title').textContent=info[0];$('trace-description').textContent=info[1];
+  $('trace-question').textContent=traceQuestions[phase];
   $('trace-generation').textContent=`${String(state.generation).padStart(2,'0')} / 10`;
   $('detail-previous').disabled=cursor===0;
   $('detail-next').disabled=phase==='finished'&&cursor===history.length-1;
@@ -102,16 +125,18 @@ function renderTrace(){
   $('trace-best').textContent=bestIndex<0?'—':`${state.moths[bestIndex].score.toFixed(1)}%`;
   $('trace-best-caption').textContent=bestIndex<0?'아직 평가 전입니다':`${state.generation}세대 · 나방 ${bestIndex+1}번`;
   const picked=state.selected===null?(bestIndex<0?0:bestIndex):state.selected;
+  $('trace-picker-hint').textContent=phase==='initial'?'가장 잘 숨을 나방을 예상해 보세요':'한 마리를 눌러 계산을 비교해 보세요';
   $('trace-population').innerHTML=state.moths.map((m,i)=>`<button type="button" data-moth="${i}" class="trace-moth-option ${i===picked?'active':''} ${state.parents.includes(i)&&phase==='selected'?'parent':''}"><span>${String(i+1).padStart(2,'0')}</span><i style="background:${rgb(PALETTE[m.colors[0]])}"></i><strong>${m.score===null?'—':m.score.toFixed(1)+'%'}</strong></button>`).join('');
   const content=$('trace-content');
   if(phase==='initial'||phase==='evaluated'){
-    const m=focusMoth(picked),error=colorError(m,picked),raw=99.9/(1+Math.exp((error-65)/8));
-    content.innerHTML=`<div class="trace-observe"><canvas id="focus-canvas" width="500" height="250" aria-label="선택한 나방의 날개와 나무껍질"></canvas><div class="trace-observe-copy"><span class="trace-tag">SOLUTION ${String(picked+1).padStart(2,'0')}</span><h3>나방 ${picked+1}번의 유전자</h3><p>날개 색 3개가 하나의 후보 해를 이룹니다. 반점 수는 외형 유전자이며 현재 점수 계산에는 포함되지 않습니다.</p>${geneRows(m)}</div></div><div class="trace-math"><div><span>① 색 차이 측정</span><strong>${error.toFixed(2)}</strong><small>날개의 여러 지점에서 RGB 차이의 평균</small></div><div><span>② 점수로 변환</span><strong>${phase==='initial'?'평가 대기':m.score.toFixed(1)+'%'}</strong><small>99.9 ÷ (1 + e<sup>(차이 − 65) ÷ 8</sup>)${state.generation===1?' · 첫 세대는 70% 상한':''}</small></div></div><p class="trace-explain">${phase==='initial'?'다음 장면에서 12마리를 모두 평가합니다.':'색 차이가 작을수록 위장 점수가 높습니다. 오른쪽에서 다른 나방을 선택해 같은 계산을 비교해 보세요.'}</p>`;
+    const m=focusMoth(picked);
+    content.innerHTML=evaluationMarkup(m,picked,phase);
     drawFocus(picked,m);
   }else if(phase==='selected'){
     const weights=state.trace.parentWeights,total=weights.reduce((a,b)=>a+b,0);
     const rows=state.moths.map((m,i)=>({i,score:m.score,prob:weights[i]/total})).sort((a,b)=>b.prob-a.prob);
     content.innerHTML=`<div class="trace-callout"><span class="trace-tag">ROULETTE SELECTION</span><h3>높은 점수일수록 부모가 될 확률이 커집니다.</h3><p>각 나방의 가중치는 <strong>점수 + 1</strong>입니다. 모든 가중치를 합친 뒤 각자의 비율만큼 추첨 구간을 배정합니다.</p><div class="trace-parent-pair"><span>부모 A <strong>나방 ${state.parents[0]+1}번</strong></span><span>부모 B <strong>나방 ${state.parents[1]+1}번</strong></span></div></div><div class="trace-table-wrap"><table class="trace-table"><thead><tr><th>나방</th><th>위장 점수</th><th>선택 확률</th><th>추첨 구간 비중</th></tr></thead><tbody>${rows.map(({i,score,prob})=>`<tr class="${state.parents.includes(i)?'chosen':''}"><td>${String(i+1).padStart(2,'0')}${state.parents.includes(i)?' ★':''}</td><td>${score.toFixed(1)}%</td><td>${(prob*100).toFixed(1)}%</td><td><span class="prob-track"><i style="width:${Math.max(3,prob*100*5)}%"></i></span></td></tr>`).join('')}</tbody></table></div><p class="trace-explain">같은 나방이 두 번 뽑힐 수도 있습니다. 점수가 낮아도 확률이 0은 아니므로 다양성이 남습니다.</p>`;
+    content.innerHTML+=`<div class="trace-draws"><h3>이번에 실제로 뽑힌 이유</h3>${state.trace.draws.map((draw,n)=>{const lower=weights.slice(0,draw.index).reduce((a,b)=>a+b,0),upper=lower+weights[draw.index];return `<div><span>부모 ${n===0?'A':'B'} · 난수 ${draw.draw.toFixed(2)} / ${draw.total.toFixed(2)}</span><strong>${lower.toFixed(2)} ≤ ${draw.draw.toFixed(2)} &lt; ${upper.toFixed(2)} → 나방 ${draw.index+1}번</strong></div>`;}).join('')}<p>0부터 가중치 합계까지 난수를 하나씩 뽑고, 그 난수가 들어간 구간의 나방을 선택했습니다.</p></div>`;
   }else if(phase==='crossed'||phase==='mutated'){
     const childIndex=Math.min(Math.max(state.focusChild,0),11),child=state.children[childIndex],before=state.trace.beforeMutation?.[childIndex],sources=state.trace.crossSources[childIndex];
     const parentA=state.trace.parentMoths[0],parentB=state.trace.parentMoths[1];
@@ -137,7 +162,7 @@ $('detail-previous').addEventListener('click',()=>{stopAuto();restore(cursor-1);
 $('detail-next').addEventListener('click',step);
 $('detail-reset').addEventListener('click',reset);
 $('detail-auto').addEventListener('click',toggleAuto);
-$('trace-population').addEventListener('click',e=>{const button=e.target.closest('[data-moth]');if(button){state.selected=Number(button.dataset.moth);render();}});
+$('trace-population').addEventListener('click',e=>{const button=e.target.closest('[data-moth]');if(button){state.selected=Number(button.dataset.moth);if(state.phase==='initial')state.guess=state.selected;render();}});
 $('trace-content').addEventListener('click',e=>{const button=e.target.closest('[data-child]');if(button){state.focusChild=Number(button.dataset.child);render();}});
 function setRate(value){$('rate').value=value;$('detail-rate').value=value;$('rate-value').textContent=`${value}%`;$('detail-rate-value').textContent=`${value}%`;}
 $('rate').addEventListener('input',e=>setRate(e.target.value));
