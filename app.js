@@ -185,12 +185,12 @@ $('learn-tab').addEventListener('click',()=>showPage('learn'));
 $('experiment-tab').addEventListener('click',()=>showPage('experiment'));
 $('start-experiment').addEventListener('click',()=>showPage('experiment'));
 $('previous').addEventListener('click',()=>{stopAuto();restore(cursor-1);});
-$('next').addEventListener('click',step);
+$('next').addEventListener('click',()=>step());
 $('reset').addEventListener('click',reset);
 function toggleAuto(){if(autoTimer){stopAuto();return;}$('auto').textContent='일시정지 Ⅱ';$('detail-auto').textContent='일시정지 Ⅱ';autoTimer=setInterval(()=>{if(state.phase==='finished'&&cursor===history.length-1){stopAuto();return;}step();},700);}
 $('auto').addEventListener('click',toggleAuto);
 $('detail-previous').addEventListener('click',()=>{stopAuto();restore(cursor-1);});
-$('detail-next').addEventListener('click',step);
+$('detail-next').addEventListener('click',()=>step());
 $('detail-reset').addEventListener('click',reset);
 $('detail-auto').addEventListener('click',toggleAuto);
 $('trace-population').addEventListener('click',e=>{const button=e.target.closest('[data-moth]');if(button){state.selected=Number(button.dataset.moth);if(state.phase==='initial')state.guess=state.selected;render();}});

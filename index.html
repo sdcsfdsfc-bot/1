@@ -5,13 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#173b32">
   <meta name="description" content="나방의 위장 진화를 통해 유전 알고리즘을 배우는 체험형 웹 실험실">
-  <title>나방의 색 · 유전 알고리즘 단계별 튜토리얼</title>
+  <title>나방의 무늬 · 유전 알고리즘 단계별 튜토리얼</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="polish.css">
   <link rel="stylesheet" href="trace.css">
   <link rel="stylesheet" href="tutorial.css">
   <link rel="stylesheet" href="inheritance.css">
+  <link rel="stylesheet" href="pattern.css">
   <script src="app.js" defer></script>
+  <script src="pattern-engine.js" defer></script>
   <script src="tutorial.js" defer></script>
 </head>
 <body>
@@ -21,18 +23,18 @@
   </header>
 
   <main>
-    <div class="course-heading"><p class="eyebrow">GENETIC ALGORITHM · INTERACTIVE TUTORIAL</p><h1>나방의 색, 어떻게 숲에 가까워질까?</h1><p>12마리 나방의 날개 색을 바꾸며 후보 해를 만들고, 비교하고, 다음 세대로 넘기는 과정을 배워 보세요.</p><span id="course-part-label">PART 01 / 03</span></div>
+    <div class="course-heading"><p class="eyebrow">GENETIC ALGORITHM · INTERACTIVE TUTORIAL</p><h1>나방의 무늬, 어떻게 숲에 가까워질까?</h1><p>색과 무늬를 만드는 숫자가 자손에게 전달되는 과정을 12마리 나방과 함께 배워 보세요.</p><span id="course-part-label">PART 01 / 03</span></div>
     <nav class="course-nav" aria-label="학습 파트"><button id="course-part-1" class="active" type="button">01 <strong>후보 해와 한 세대</strong></button><button id="course-part-2" type="button">02 <strong>선택 확률과 다양성</strong></button><button id="course-part-3" type="button">03 <strong>내가 직접 실험하기</strong></button></nav>
-    <section id="tutorial-page" class="tutorial-page" aria-label="단계별 튜토리얼"><div class="tutorial-top"><span id="tutorial-count">장면 1 / 19</span><button id="tutorial-reset" type="button">이 파트 처음부터 ↺</button></div><div id="tutorial-visual"></div><div id="tutorial-coach"></div><div class="tutorial-bottom"><div class="tutorial-progress-note">장면을 넘기며 같은 나방 집단의 변화를 따라가 보세요.</div><div class="tutorial-buttons"><button id="tutorial-prev" type="button">← 이전</button><button id="tutorial-next" type="button">다음 →</button></div></div><p class="tutorial-note">1·2부에서는 같은 나방 집단의 선택·교차·변이를 순서대로 살펴봅니다. 3부에서는 새 숲을 만들며 직접 실험할 수 있습니다.</p></section>
+    <section id="tutorial-page" class="tutorial-page" aria-label="단계별 튜토리얼"><div class="tutorial-top"><span id="tutorial-count">장면 1 / 16</span><button id="tutorial-reset" type="button">이 파트 처음부터 ↺</button></div><div id="tutorial-visual"></div><div id="tutorial-coach"></div><div class="tutorial-bottom"><div class="tutorial-progress-note">장면을 넘기며 같은 나방 집단의 변화를 따라가 보세요.</div><div class="tutorial-buttons"><button id="tutorial-prev" type="button">← 이전</button><button id="tutorial-next" type="button">다음 →</button></div></div><p class="tutorial-note">1·2부에서는 숫자 유전자가 무늬를 만들고 자손에게 전달되는 과정을 살펴봅니다. 3부에서는 새 숲을 만들며 직접 실험할 수 있습니다.</p></section>
     <div id="lab-pages" class="hidden"><div class="lab-heading"><span>PART 03 · YOUR TURN</span><h2>이제 직접 실험해 보세요.</h2><p>변이 확률을 바꾸고, 전체 숲과 세부 계산을 오가며 탐색하세요.</p></div><nav class="tabs lab-tabs" aria-label="실험 화면 선택"><button id="learn-tab" class="tab active" type="button" aria-selected="true">해 찾는 과정</button><button id="experiment-tab" class="tab" type="button" aria-selected="false">전체 그림</button></nav>
     <section id="learn-page" class="page learn-page" aria-labelledby="learn-title">
-      <div class="trace-header"><div><p class="eyebrow">HOW A SOLUTION IS FOUND</p><h1 id="learn-title">해를 찾는 과정<span class="heading-dot">.</span></h1><p>나방의 날개 색이 나무껍질과 비슷해지는 과정을 실제 계산값으로 따라가 보세요. 한 장면씩 넘기면 선택, 교차, 변이가 어떻게 일어났는지 볼 수 있습니다.</p></div><button id="start-experiment" class="secondary" type="button">전체 그림 보기 ↗</button></div>
+      <div class="trace-header"><div><p class="eyebrow">HOW A SOLUTION IS FOUND</p><h1 id="learn-title">해를 찾는 과정<span class="heading-dot">.</span></h1><p>무늬를 만드는 숫자가 어떻게 전달되고 바뀌는지 실제 계산값으로 따라가 보세요. 한 장면씩 넘기면 선택, 교차, 변이를 볼 수 있습니다.</p></div><button id="start-experiment" class="secondary" type="button">전체 그림 보기 ↗</button></div>
       <div class="trace-toolbar"><button id="detail-previous" class="secondary" type="button">← 이전 장면</button><button id="detail-next" class="primary" type="button">다음 장면 →</button><button id="detail-auto" class="secondary" type="button">자동 진행 ▷</button><button id="detail-reset" class="secondary" type="button">새로운 숲 ↻</button><label class="trace-rate" for="detail-rate">변이 확률 <strong id="detail-rate-value">12%</strong><input id="detail-rate" type="range" min="0" max="50" value="12" step="1"></label></div>
       <div class="trace-scrubber"><span id="detail-scene-count" class="trace-counter">장면 1 / 1</span><input id="detail-scene-range" type="range" min="0" max="0" value="0" aria-label="장면 이동"></div>
       <div id="trace-phases" class="trace-phases" aria-label="해를 찾는 순서"></div>
       <div class="trace-grid">
         <article class="trace-main"><div class="trace-main-head"><div><span id="trace-step-number" class="trace-index">STEP 00</span><h2 id="trace-title">초기 개체군</h2><p id="trace-description"></p><div class="trace-task"><b>이번 장면의 질문</b><span id="trace-question"></span></div></div><strong id="trace-generation" class="trace-generation">01 / 10</strong></div><div id="trace-content" class="trace-content" aria-live="polite"></div></article>
-<aside class="trace-side"><div class="trace-stat"><p class="eyebrow">BEST SOLUTION SO FAR</p><strong id="trace-best">—</strong><span id="trace-best-caption">아직 평가 전입니다</span></div><div class="trace-picker"><div class="trace-picker-head"><h2>나방 12마리</h2><span id="trace-picker-hint">가장 잘 숨을 나방을 예상해 보세요</span></div><div id="trace-population" class="trace-population"></div></div><div class="trace-guide"><p class="eyebrow">WHAT IS A SOLUTION?</p><p>여기서 하나의 ‘해’는 나방 한 마리의 <strong>날개 색 6개와 반점 수</strong>입니다. 각 칸은 고정된 15색 중 하나이며, 교차 때 부모 한쪽의 색을 그대로 받습니다. 변이 때도 이 15색에서 다시 뽑습니다. 목표는 숲의 나무껍질과 비슷한 날개 색을 찾아 위장 점수를 높이는 것입니다.</p></div></aside>
+<aside class="trace-side"><div class="trace-stat"><p class="eyebrow">BEST SOLUTION SO FAR</p><strong id="trace-best">—</strong><span id="trace-best-caption">아직 평가 전입니다</span></div><div class="trace-picker"><div class="trace-picker-head"><h2>나방 12마리</h2><span id="trace-picker-hint">가장 잘 숨을 나방을 예상해 보세요</span></div><div id="trace-population" class="trace-population"></div></div><div class="trace-guide"><p class="eyebrow">WHAT IS A SOLUTION?</p><p>나방 한 마리의 ‘해’는 <strong>무늬를 만드는 숫자 유전자 12개</strong>입니다. 바탕색과 무늬색의 L*a*b* 좌표 6개, 무늬의 종류·크기·경계·작은 점을 조절하는 숫자 6개로 날개를 그립니다. 부모 숫자를 가중평균해 자손을 만들고, 변이 때 일부 값을 조금 바꿉니다.</p></div></aside>
       </div>
       <div class="lesson-heading"><div><p class="eyebrow">THE PROCESS <span>— GUIDE</span></p><h2>여섯 단계의 원리<span class="heading-dot">.</span></h2></div><p>카드를 눌러 각 단계의 역할을 살펴보세요.</p></div>
       <div id="lesson-cards" class="lesson-grid"></div>
@@ -50,8 +52,8 @@
       </div>
       <div class="stage-strip"><div><span class="stage-label">현재 단계</span><strong id="phase-title">초기 개체군</strong><p id="phase-description">12마리의 나방이 무작위 유전자를 가지고 태어났습니다.</p></div><div id="stage-steps" class="stage-steps" aria-label="진행 단계"></div></div>
       <div class="content-grid"><div class="forest-card"><div class="panel-title"><h2>숲에서 살아남기</h2><span>나방을 눌러 유전자 확인</span></div><canvas id="forest" width="1100" height="700" role="img" aria-label="나무껍질 위에 놓인 나방 12마리"></canvas><div class="forest-footer"><span id="scene-count">장면 1 / 1</span><input id="scene-range" aria-label="장면 이동" type="range" min="0" max="0" value="0"></div></div>
-      <aside class="sidebar"><div class="info-card"><p class="eyebrow">SELECTED MOTH</p><h2 id="moth-heading">나방을 선택하세요</h2><p id="moth-info">나방을 누르면 날개 색 유전자와 위장 점수를 볼 수 있습니다.</p><div id="genes" class="genes"></div></div><div class="info-card chart-card"><p class="eyebrow">FITNESS OVER TIME</p><h2>세대별 위장 점수</h2><canvas id="chart" width="460" height="240" role="img" aria-label="세대별 최고 점수와 평균 점수 그래프"></canvas><div class="legend"><span><i class="best-key"></i> 최고 점수</span><span><i class="avg-key"></i> 평균 점수</span></div></div><div class="info-card tip-card"><p class="eyebrow">생각해 보기</p><p id="tip">색이 나무껍질에 가까울수록 포식자에게 발견될 가능성이 낮아집니다.</p></div></aside></div>
-      <p class="footer-note">이 모형은 위장 색을 수치로 평가하는 교육용 시뮬레이션입니다. 실제 생물의 진화는 더 복잡합니다.</p>
+      <aside class="sidebar"><div class="info-card"><p class="eyebrow">SELECTED MOTH</p><h2 id="moth-heading">나방을 선택하세요</h2><p id="moth-info">나방을 누르면 무늬를 만드는 숫자 유전자와 위장 점수를 볼 수 있습니다.</p><div id="genes" class="genes"></div></div><div class="info-card chart-card"><p class="eyebrow">FITNESS OVER TIME</p><h2>세대별 위장 점수</h2><canvas id="chart" width="460" height="240" role="img" aria-label="세대별 최고 점수와 평균 점수 그래프"></canvas><div class="legend"><span><i class="best-key"></i> 최고 점수</span><span><i class="avg-key"></i> 평균 점수</span></div></div><div class="info-card tip-card"><p class="eyebrow">생각해 보기</p><p id="tip">색과 무늬의 위치가 함께 위장 점수에 영향을 줍니다.</p></div></aside></div>
+      <p class="footer-note">이 모형은 CamoEvo의 무늬 유전 개념을 단순화한 교육용 시뮬레이션입니다. 점수는 색 차이로 계산하며 실제 포식자의 판단을 재현하지 않습니다.</p>
     </section>
     </div>
   </main>
