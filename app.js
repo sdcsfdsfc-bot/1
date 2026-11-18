@@ -4,18 +4,18 @@ const PALETTE = [[42,103,65],[80,130,74],[130,161,83],[177,151,92],[104,75,55],[
 const BARK = [[76,43,29],[94,54,35],[111,65,42],[128,76,49],[145,88,57],[158,101,67],[126,80,58],[171,116,79],[102,70,52],[190,137,94]];
 const LEAVES = [[43,105,55],[57,127,62],[75,145,68],[91,157,78]];
 const LESSONS = [
-  ['무작위 개체군','나방마다 조금씩 다른 날개 색과 반점 수를 가지고 시작합니다.','12마리의 나방에게 날개 색 유전자 6개와 반점 수 유전자 1개를 무작위로 배정합니다.'],
+  ['무작위 개체군','나방마다 조금씩 다른 날개 색과 반점 수를 가지고 시작합니다.','12마리의 나방에게 날개 색 유전자 6개와 반점 수 유전자 1개를 무작위로 배정합니다. 각 날개 칸의 색은 고정된 15색 중 하나입니다.'],
   ['적합도 평가','나무껍질과 더 비슷한 나방이 높은 점수를 받습니다.','날개 부분의 색과 배경 색 차이를 여러 지점에서 비교합니다. 차이가 작을수록 위장 점수가 높아집니다.'],
   ['부모 선택','점수가 높은 나방일수록 부모가 될 가능성이 커집니다.','룰렛 휠 선택을 사용합니다. 점수가 낮은 나방도 선택될 가능성이 조금은 남아 있습니다.'],
-  ['유전자 교차','두 부모의 유전자를 섞어 다음 세대의 나방을 만듭니다.','각 색 유전자를 부모 중 한쪽에서 무작위로 받고, 가장 좋은 나방 한 마리는 그대로 보존합니다.'],
-  ['돌연변이','일부 유전자가 낮은 확률로 바뀌어 다양성을 만듭니다.','슬라이더로 변이 확률을 조절하세요. 확률을 높이면 더 다양한 색이 나타납니다.'],
+  ['유전자 교차','날개 여섯 칸마다 부모 한쪽의 색을 그대로 물려받습니다.','부모의 두 색을 평균 내지 않습니다. 각 칸이 부모 A 또는 B 중 한쪽의 색을 무작위로 받고, 가장 좋은 나방 한 마리는 그대로 보존합니다.'],
+  ['돌연변이','일부 유전자가 낮은 확률로 바뀌어 다양성을 만듭니다.','슬라이더로 변이 확률을 조절하세요. 변이할 때도 고정된 15색 중 하나를 다시 뽑습니다. 같은 색이 뽑힐 수도 있습니다.'],
   ['세대 교체','새 개체군을 다시 평가하며 10세대까지 반복합니다.','최고 점수와 평균 점수의 흐름을 그래프에서 살펴보세요. 결과는 매번 달라질 수 있습니다.']
 ];
 const PHASES = {
   initial:['초기 개체군','12마리의 나방이 무작위 유전자를 가지고 태어났습니다.','나방의 색과 나무껍질의 색을 비교해 보세요.'],
   evaluated:['적합도 평가','날개 색과 배경 색을 비교해 각 나방의 위장 점수를 계산했습니다.','점수가 높은 나방은 나무껍질에 더 잘 섞입니다.'],
   selected:['부모 선택','위장 점수를 가중치로 사용해 부모 두 마리를 뽑았습니다.','선택된 부모에게는 밝은 테두리가 표시됩니다.'],
-  crossed:['유전자 교차','두 부모의 유전자를 섞어 자손 12마리를 만들었습니다.','가장 좋은 나방 한 마리는 그대로 다음 세대로 옮깁니다.'],
+  crossed:['유전자 교차','날개 여섯 칸마다 부모 한쪽의 색을 그대로 받아 자손 12마리를 만들었습니다.','가장 좋은 나방 한 마리는 그대로 다음 세대로 옮깁니다.'],
   mutated:['돌연변이','일부 자손의 유전자가 설정한 확률에 따라 바뀌었습니다.','변이는 새로운 가능성을 만들지만 항상 점수를 높이지는 않습니다.'],
   replaced:['세대 교체','자손이 새로운 개체군이 되었습니다. 다시 평가를 시작합니다.','그래프에서 세대별 최고 점수와 평균 점수를 비교해 보세요.'],
   finished:['실험 완료','10세대까지 진행했습니다. 그래프와 나방의 색 변화를 살펴보세요.','새로운 숲을 누르면 다른 환경에서 다시 실험할 수 있습니다.']
@@ -129,7 +129,7 @@ function inheritanceDiagram(parentA,parentB,childBefore,sources,childAfter=null,
   return `<div class="inheritance-diagram ${childAfter?'has-after':''}" aria-label="부모 유전자가 자손에게 전달되는 과정"><div class="inheritance-intro"><strong>한 칸씩 따로 선택합니다</strong><span>각 유전자는 부모 A 또는 B에게서 50% 확률로 전달됩니다. 선택된 색의 굵은 테두리를 따라가 보세요.</span></div>${Array.from({length:genes},(_,j)=>{
     const source=sources[j],elite=source==='보존',fromA=source===0,fromB=source===1,mutated=childAfter?.mutations?.includes(j);
     return `<div class="inheritance-row"><strong class="inheritance-gene">${geneNames[j]}</strong><div class="inheritance-parent ${fromA?'chosen':''} ${elite?'muted':''}"><small>부모 A</small>${geneChip(parentA,j)}</div><div class="inheritance-parent ${fromB?'chosen':''} ${elite?'muted':''}"><small>부모 B</small>${geneChip(parentB,j)}</div><div class="inheritance-transfer ${elite?'elite':''}">${elite?'최고 해 보존':`${fromA?'A':'B'}에서 전달`} <b>→</b></div><div class="inheritance-child"><small>교차 직후</small>${geneChip(childBefore,j)}</div>${childAfter?`<div class="inheritance-after ${mutated?'changed':''}"><small>${mutated?'변이 발생':'변이 없음'}</small>${geneChip(childAfter,j)}</div>`:''}</div>`;
-  }).join('')}<p class="inheritance-footnote">${childAfter?'변이는 교차가 끝난 뒤 각 유전자에서 따로 시도합니다. 같은 값이 다시 뽑힐 수도 있습니다.':'이 단계에서는 부모의 색만 섞습니다. 새 색은 다음 변이 단계에서 나타납니다.'}</p></div>`;
+}).join('')}<p class="inheritance-footnote">${childAfter?'변이는 교차가 끝난 뒤 각 유전자에서 따로 시도합니다. 같은 값이 다시 뽑힐 수도 있습니다.':'이 단계에서는 각 칸이 부모 한쪽의 색을 그대로 받습니다. 변이 단계에서는 고정된 15색 중 다시 뽑습니다.'}</p></div>`;
 }
 function geneRows(m,source=null,before=null){return `<div class="trace-gene-list">${geneNames.map((name,j)=>`<div class="trace-gene-row"><span>${name}</span><div>${geneChip(m,j)}</div>${source?`<small>${source[j]}</small>`:''}${before?`<small class="${m.mutations.includes(j)?'changed':'same'}">${geneValue(before,j)} → ${geneValue(m,j)}</small>`:''}</div>`).join('')}</div>`;}
 function focusMoth(i){return state.moths[i]||state.moths[0];}
