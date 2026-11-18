@@ -34,12 +34,13 @@ function makeGuideRounds(){
       childrenBefore.push(guideGenome(colors));sources.push(origin);
     }
     const childrenAfter=guideClone(childrenBefore),mutations=[];
+    childrenAfter.forEach(m=>m.mutations=[]);
     for(let child=1;child<12;child++)for(let gene=0;gene<3;gene++)if(guideRandom()<0.18){
       const old=childrenAfter[child].colors[gene];let next=Math.floor(guideRandom()*PALETTE.length);
       if(next===old)next=(next+1)%PALETTE.length;
-      childrenAfter[child].colors[gene]=next;mutations.push({child,gene,old,next});
+      childrenAfter[child].colors[gene]=next;childrenAfter[child].mutations.push(gene);mutations.push({child,gene,old,next});
     }
-    if(!mutations.length){const child=1,gene=round%3,old=childrenAfter[child].colors[gene],next=(old+4)%PALETTE.length;childrenAfter[child].colors[gene]=next;mutations.push({child,gene,old,next});}
+    if(!mutations.length){const child=1,gene=round%3,old=childrenAfter[child].colors[gene],next=(old+4)%PALETTE.length;childrenAfter[child].colors[gene]=next;childrenAfter[child].mutations.push(gene);mutations.push({child,gene,old,next});}
     childrenAfter.forEach(m=>Object.assign(m,guideScore(m.colors)));
     const focus=mutations[0].child;
     rounds.push({before,parents,weights,draws,eliteIndex:first,childrenBefore,childrenAfter,sources,mutations,focus});
@@ -92,7 +93,7 @@ function guideVisual(frame){
   } else if(['select','probability','draw'].includes(frame.kind)){
     evidence=`<div class="guide-evidence"><h3>점수 → 추첨 구간 → 부모</h3>${guideProbability(round)}${frame.kind==='select'||frame.kind==='draw'?`<div class="guide-draws">${round.draws.map((d,i)=>`<p>부모 ${i===0?'A':'B'} · 난수 <strong>${d.draw.toFixed(1)}</strong> ∈ [${d.low.toFixed(1)}, ${d.high.toFixed(1)}) → <strong>나방 ${d.index+1}</strong></p>`).join('')}</div>`:''}</div>`;
   } else if(['cross','mutation','diversity'].includes(frame.kind)){
-    evidence=`<div class="guide-evidence guide-compare"><h3>부모에서 자손으로</h3><div><span>부모 A · 나방 ${round.parents[0]+1}</span>${guideGeneStrip(round.before[round.parents[0]])}</div><div><span>부모 B · 나방 ${round.parents[1]+1}</span>${guideGeneStrip(round.before[round.parents[1]])}</div><div><span>자손 ${focus+1} · 교차 직후</span>${guideGeneStrip(round.childrenBefore[focus],round.sources[focus])}</div><div class="guide-result"><span>자손 ${focus+1} · 변이 후</span>${guideGeneStrip(after[focus])}<p>${focusMutations.map(m=>`날개 ${m.gene+1}: ${guideColor(m.old)} → ${guideColor(m.next)}`).join(' · ')}<br>점수 ${round.childrenBefore[focus].score.toFixed(1)}% → ${after[focus].score.toFixed(1)}%</p></div></div>`;
+    evidence=`<div class="guide-evidence"><h3>부모 ${round.parents[0]+1}번 + ${round.parents[1]+1}번 → 자손 ${focus+1}번</h3>${inheritanceDiagram(round.before[round.parents[0]],round.before[round.parents[1]],round.childrenBefore[focus],round.sources[focus],frame.kind==='cross'?null:after[focus])}${frame.kind==='cross'?'<p>굵은 테두리의 부모 색이 그 칸의 자손 색으로 그대로 전달됩니다. 다음 장면에서 변이를 확인하세요.</p>':`<div class="guide-mutation-result">변이 ${focusMutations.length}칸 · ${focusMutations.map(m=>`날개 ${m.gene+1}: ${guideColor(m.old)} → ${guideColor(m.next)}`).join(' · ')}<br>점수 ${round.childrenBefore[focus].score.toFixed(1)}% → ${after[focus].score.toFixed(1)}%</div>`}</div>`;
   } else if(['replace','takeaway'].includes(frame.kind)){
     const oldBest=Math.max(...before.map(m=>m.score)),newBest=Math.max(...after.map(m=>m.score));
     evidence=`<div class="guide-evidence"><h3>한 세대의 결과</h3><div class="guide-result-metrics"><span>이전 최고 <strong>${oldBest.toFixed(1)}%</strong></span><b>→</b><span>새 세대 최고 <strong>${newBest.toFixed(1)}%</strong></span></div><p>최고 나방 ${round.eliteIndex+1}번은 변이 없이 복사됩니다. 새 자손이 나빠져도 발견한 최고 해를 잃지 않습니다.</p></div>`;
