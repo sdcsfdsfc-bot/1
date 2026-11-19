@@ -64,13 +64,54 @@ function guideWorkedExample(round,kind,a,b,before,after){
   const av=a.genes[j].toFixed(digits),bv=b.genes[j].toFixed(digits),cv=before.genes[j].toFixed(digits);
   return `<div class="guide-worked"><span>한 유전자 계산 예시</span><h4>${PATTERN_GENES[j].name}</h4><div class="guide-worked-flow"><div><small>부모 A</small><strong>${av}</strong></div><b>× ${(w*100).toFixed(1)}% +</b><div><small>부모 B</small><strong>${bv}</strong></div><b>× ${((1-w)*100).toFixed(1)}% =</b><div class="result"><small>자손</small><strong>${cv}</strong></div></div><p>부모의 같은 유전자끼리 계산합니다. 나머지 유전자도 각자의 비율로 계산합니다.</p></div>`;
 }
+const GUIDE_GENE_INFO=[
+  {short:'날개 바탕의 밝기',detail:'L*는 밝기를 나타냅니다. 값이 작으면 바탕이 어두워지고, 크면 밝아집니다.',low:'어두운 바탕',high:'밝은 바탕'},
+  {short:'바탕의 초록 ↔ 빨강',detail:'a*는 색의 방향입니다. 음수 쪽은 초록, 양수 쪽은 빨강에 가까워집니다.',low:'초록 쪽',high:'빨강 쪽'},
+  {short:'바탕의 파랑 ↔ 노랑',detail:'b*는 색의 방향입니다. 음수 쪽은 파랑, 양수 쪽은 노랑에 가까워집니다.',low:'파랑 쪽',high:'노랑 쪽'},
+  {short:'무늬 부분의 밝기',detail:'날개 위에 덧입히는 무늬색의 밝기입니다. 바탕색 밝기와는 별도로 바뀝니다.',low:'어두운 무늬',high:'밝은 무늬'},
+  {short:'무늬의 초록 ↔ 빨강',detail:'무늬색의 a* 값입니다. 음수 쪽은 초록, 양수 쪽은 빨강에 가까워집니다.',low:'초록 쪽',high:'빨강 쪽'},
+  {short:'무늬의 파랑 ↔ 노랑',detail:'무늬색의 b* 값입니다. 음수 쪽은 파랑, 양수 쪽은 노랑에 가까워집니다.',low:'파랑 쪽',high:'노랑 쪽'},
+  {short:'A~D 무늬를 섞는 위치',detail:'0은 A 무늬, 1은 B, 2는 C, 3은 D 무늬입니다. 소수점 값은 이웃한 두 무늬를 섞는 비율입니다. 예를 들어 1.70은 B 30%와 C 70%를 섞습니다. 숫자가 클수록 무조건 복잡해지는 것은 아닙니다.',low:'A 무늬',high:'D 무늬'},
+  {short:'무늬가 반복되는 간격',detail:'값이 작으면 무늬의 일부를 크게 확대해 보고, 값이 크면 넓은 범위를 날개에 넣어 무늬가 더 촘촘해집니다.',low:'크고 넓은 무늬',high:'작고 촘촘한 무늬'},
+  {short:'무늬색이 칠해질 범위',detail:'흑백 무늬에서 이 기준보다 밝은 곳을 무늬색으로 칠합니다. 기준값이 높을수록 무늬색 영역이 줄어듭니다.',low:'무늬색 영역이 넓음',high:'무늬색 영역이 좁음'},
+  {short:'무늬의 세로 길이',detail:'값이 클수록 흑백 무늬를 세로 방향으로 늘여 긴 줄처럼 보이게 합니다.',low:'짧고 납작함',high:'세로로 길어짐'},
+  {short:'색 경계의 대비',detail:'바탕색과 무늬색이 만나는 경계 근처의 밝기를 바꿉니다. 값이 클수록 경계가 더 또렷해집니다.',low:'부드러운 경계',high:'또렷한 경계'},
+  {short:'작은 점의 양',detail:'큰 무늬와 별도로 작은 점을 추가하는 양입니다. 값이 클수록 작은 점이 더 자주 나타납니다.',low:'작은 점이 적음',high:'작은 점이 많음'}
+];
+const GUIDE_GENE_GROUPS=[
+  {title:'바탕색',intro:'날개의 기본 색 · L*, a*, b*',indices:[0,1,2],className:'color'},
+  {title:'무늬색',intro:'무늬가 칠해진 부분의 색 · L*, a*, b*',indices:[3,4,5],className:'color'},
+  {title:'무늬의 큰 모양',intro:'어떤 무늬를 쓰고 어디까지 칠할지',indices:[6,7,8,9],className:'shape'},
+  {title:'무늬의 세부 질감',intro:'경계와 작은 점을 다듬기',indices:[10,11],className:'texture'}
+];
+function guideGeneExplorer(m){
+  const [base,mark]=geneColors(m);
+  return `<div class="guide-gene-explorer"><div class="pattern-color-pair"><span><i style="background:${rgb(base)}"></i>바탕색 ${rgb(base)}</span><span><i style="background:${rgb(mark)}"></i>무늬색 ${rgb(mark)}</span></div><p class="guide-gene-invite">카드를 누르면 숫자의 뜻과 날개가 어떻게 바뀌는지 볼 수 있어요.</p>${GUIDE_GENE_GROUPS.map(group=>`<section class="guide-gene-group"><div class="guide-gene-group-title"><h4>${group.title}</h4><span>${group.intro}</span></div><div class="guide-gene-cards ${group.className}">${group.indices.map(j=>`<button type="button" data-guide-gene="${j}" aria-pressed="false"><span>${PATTERN_GENES[j].name}</span><strong>${geneDisplay(m,j)}</strong><small>${GUIDE_GENE_INFO[j].short}</small></button>`).join('')}</div></section>`).join('')}<div id="guide-gene-detail" class="guide-gene-detail" aria-live="polite"></div></div>`;
+}
+function guideGeneMeaning(m,j){
+  if(j!==6)return '';
+  const value=m.genes[j],low=Math.floor(value),high=Math.min(3,low+1),mix=Math.round((value-low)*100),names=['A','B','C','D'];
+  return low===high?`${names[low]} 무늬`:`${names[low]} 무늬 ${100-mix}% + ${names[high]} 무늬 ${mix}%`;
+}
+function drawGuideGeneDetail(m,j){
+  const root=$('guide-gene-detail');if(!root)return;
+  document.querySelectorAll('[data-guide-gene]').forEach(button=>button.setAttribute('aria-pressed',String(Number(button.dataset.guideGene)===j)));
+  const spec=PATTERN_GENES[j],info=GUIDE_GENE_INFO[j],meaning=guideGeneMeaning(m,j);
+  root.innerHTML=`<div class="guide-gene-detail-head"><span>선택한 유전자</span><h4>${spec.name} <strong>${geneDisplay(m,j)}</strong></h4><p>${info.detail}</p>${meaning?`<p class="guide-gene-meaning">현재 값 ${geneDisplay(m,j)} = ${meaning}</p>`:''}</div><div class="guide-gene-variants">${[{name:'낮은 값',value:spec.min,caption:info.low},{name:'현재 값',value:m.genes[j],caption:'현재 나방'},{name:'높은 값',value:spec.max,caption:info.high}].map((item,i)=>`<div class="${i===1?'current':''}"><span>${item.name} <b>${j<6?item.value.toFixed(1):item.value.toFixed(2)}</b></span><canvas width="150" height="100" data-gene-variant="${i}" aria-label="${item.caption}일 때 나방 무늬"></canvas><small>${item.caption}</small></div>`).join('')}</div><p class="guide-gene-footnote">한 번에 이 숫자 하나만 바꾸고 나머지 유전자는 그대로 둔 모습입니다.</p>`;
+  root.querySelectorAll('[data-gene-variant]').forEach(canvas=>{
+    const variant=Number(canvas.dataset.geneVariant),copy={genes:[...m.genes]};
+    if(variant===0)copy.genes[j]=spec.min;
+    if(variant===2)copy.genes[j]=spec.max;
+    paintPatternMoth(canvas.getContext('2d'),75,49,copy,.7,false,null);
+  });
+}
 function guideVisual(frame){
   const round=GUIDE_ROUNDS[frame.round],kind=frame.kind,showAfter=kind==='replace',pop=showAfter?round.childrenAfter:round.before;
   const selected=kind==='draw'?round.parents:[],focus=round.focus,chosen=kind==='genome'||kind==='make'||kind==='evaluate'?round.before.reduce((best,m,i)=>m.score>round.before[best].score?i:best,0):focus;
   let extra='';
   if(kind==='genome'||kind==='make'||kind==='evaluate'){
     const m=round.before[chosen];
-    const process=kind==='make'?`<div class="guide-dual-process"><div><h4>고정된 나무 무늬</h4>${patternStagesMarkup('forest-pattern-stages')}</div><div><h4>진화하는 나방 무늬</h4>${patternStagesMarkup('moth-pattern-stages')}</div></div>`:patternGeneRows(m);
+    const process=kind==='make'?`<div class="guide-dual-process"><div><h4>고정된 나무 무늬</h4>${patternStagesMarkup('forest-pattern-stages')}</div><div><h4>진화하는 나방 무늬</h4>${patternStagesMarkup('moth-pattern-stages')}</div></div>`:guideGeneExplorer(m);
     extra=`<div class="pattern-guide-detail"><div><h3>나방 ${chosen+1}의 설계도</h3><canvas id="guide-focus" width="250" height="140"></canvas>${kind==='evaluate'?`<p>평균 RGB 차이 <strong>${m.error.toFixed(2)}</strong> → 위장 점수 <strong>${m.score.toFixed(1)}%</strong></p>`:''}</div><div>${process}</div></div>`;
   }else if(kind==='probability'||kind==='draw'){
     extra=`<div class="guide-evidence"><h3>${kind==='draw'?'난수가 들어간 구간의 나방을 부모로 선택':'점수를 추첨 구간의 넓이로 변환'}</h3><div class="guide-probability">${round.before.map((m,i)=>`<div class="guide-prob-row ${selected.includes(i)?'chosen':''}"><span>나방 ${i+1}</span><strong>${m.score.toFixed(1)}%</strong><div><i style="width:${Math.min(100,round.weights[i]/round.total*380)}%"></i></div><b>${(round.weights[i]/round.total*100).toFixed(1)}%</b></div>`).join('')}</div>${kind==='draw'?`<div class="guide-draws">${round.draws.map((d,j)=>`<p>부모 ${j?'B':'A'}: 난수 ${d.draw.toFixed(1)} ∈ [${d.low.toFixed(1)}, ${d.high.toFixed(1)}) → <strong>나방 ${d.index+1}</strong></p>`).join('')}</div>`:''}</div>`;
@@ -124,6 +165,10 @@ function renderGuide(){
   const pop=frame.kind==='replace'?GUIDE_ROUNDS[frame.round].childrenAfter:GUIDE_ROUNDS[frame.round].before;
   document.querySelectorAll('[data-guide-moth]').forEach(canvas=>paintPatternMoth(canvas.getContext('2d'),75,49,pop[Number(canvas.dataset.guideMoth)],.7,false,null));
   const focus=$('guide-focus');if(focus){const chosen=pop.reduce((best,m,i)=>m.score>pop[best].score?i:best,0);paintPatternMoth(focus.getContext('2d'),125,69,pop[chosen],1.2,false,null);}
+  if(frame.kind==='genome'||frame.kind==='evaluate'){
+    const chosen=pop.reduce((best,m,i)=>m.score>pop[best].score?i:best,0);
+    drawGuideGeneDetail(pop[chosen],6);
+  }
   if(frame.kind==='make'){
     const chosen=pop.reduce((best,m,i)=>m.score>pop[best].score?i:best,0);
     drawPatternStages(GUIDE_FOREST,$('forest-pattern-stages'),true);
@@ -143,6 +188,12 @@ function showCoursePart(part){
   else{showPage('experiment');if(state.phase==='initial')step();}
 }
 for(let i=1;i<=7;i++)$('course-part-'+i).addEventListener('click',()=>showCoursePart(i));
+$('tutorial-visual').addEventListener('click',event=>{
+  const button=event.target.closest('[data-guide-gene]');if(!button)return;
+  const pop=GUIDE_ROUNDS[guideFrames()[guideFrame].round].before;
+  const chosen=pop.reduce((best,m,i)=>m.score>pop[best].score?i:best,0);
+  drawGuideGeneDetail(pop[chosen],Number(button.dataset.guideGene));
+});
 $('tutorial-prev').addEventListener('click',()=>{if(guideFrame>0){guideFrame--;renderGuide();}});
 $('tutorial-next').addEventListener('click',()=>{if(guideFrame<guideFrames().length-1){guideFrame++;renderGuide();}else showCoursePart(7);});
 $('tutorial-reset').addEventListener('click',()=>showCoursePart(1));
