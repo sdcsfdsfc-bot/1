@@ -71,12 +71,20 @@ drawChart=function(){
     if(count<=65)series.forEach((value,i)=>ellipse(ctx,xAt(i),yAt(value),3.3,3.3,color));
   }
   const initial=state.best[0],latest=state.best.at(-1),gain=latest-initial,stalled=stalledGenerations(state.best),rate=Number($('rate').value);
-  $('chart-summary').textContent=`${count}세대 전체 기록 · 첫 최고 ${initial.toFixed(1)}% → 현재 최고 ${latest.toFixed(1)}% · 변화 ${gain>=0?'+':''}${gain.toFixed(1)}%p`;
+  if(count>1&&stalled===0){
+    const x=xAt(count-1),y=yAt(latest);
+    ellipse(ctx,x,y,8,8,'#e8c76c');ellipse(ctx,x,y,4,4,'#2e8054');
+    ctx.fillStyle='#2e8054';ctx.font='bold 13px sans-serif';ctx.textAlign='right';ctx.fillText('새 최고',r,Math.max(t+14,y-14));
+  }
+  $('chart-summary').textContent=`${count}세대 전체 기록 · 첫 최고 ${initial.toFixed(2)}% → 현재 최고 ${latest.toFixed(2)}% · 변화 ${gain>=0?'+':''}${gain.toFixed(2)}%p`;
   $('chart-scale').textContent=`세로축 ${lower}~${upper}%로 확대 · 가로축은 세대`;
-  $('chart-exploration').textContent=`다음 세대 변이 확률 ${$('rate').value}% · 선택값과 동일${stalled>=4&&rate>0?` · ${stalled}세대 정체로 변이 폭만 확대`:''}`;
+  $('chart-exploration').textContent=state.phase==='finished'&&state.stopReason==='stagnation'
+    ?`최고 점수 갱신 없이 ${STAGNATION_LIMIT}세대 · 실험 중지`
+    :`다음 세대 변이 확률 ${$('rate').value}% · 선택값과 동일${stalled>=4&&rate>0?` · ${stalled}세대 정체로 변이 폭만 확대`:''}`;
 };
 
 function advanceGeneration(){
+  if(state.phase==='finished'){stopAuto();return;}
   const start=state.generation;let guard=0;
   while(state.generation===start&&guard++<7)step();
 }
@@ -87,6 +95,7 @@ function previousGeneration(){
 }
 function toggleGenerationAuto(){
   if(autoTimer){stopAuto();return;}
+  if(state.phase==='finished')return;
   $('auto').textContent='일시정지 Ⅱ';
   autoTimer=setInterval(advanceGeneration,1100);
 }
@@ -98,16 +107,26 @@ function changeBackground(){
   const survivors=state.moths.map(clone),round=(state.environmentRound||1)+1;
   state.forest=makeForest($('bark-theme').value,$('bark-pattern').value);
   state.moths=survivors;state.generation=1;state.environmentRound=round;
-  state.parents=[];state.children=[];state.trace={};state.selected=null;state.focusChild=1;
+  state.parents=[];state.children=[];state.trace={};state.selected=null;state.focusChild=1;state.stopReason=null;
   state.best=[];state.avg=[];state.phase='evaluated';evaluate();
   history=[clone(state)];cursor=0;render();
 }
 const renderWithEnvironment=render;
 render=function(){
   renderWithEnvironment();
-  $('scene-count').textContent=`환경 ${state.environmentRound||1} · ${state.generation}세대 · 최고 ${state.best.length?state.best.at(-1).toFixed(1)+'%':'평가 전'}`;
+  const count=state.best.length,latest=state.best.at(-1),previous=state.best.at(-2),stalled=stalledGenerations(state.best);
+  const updated=count>1&&stalled===0;
+  $('best-score').textContent=count?`${latest.toFixed(2)}%`:'—';
+  $('best-record').classList.toggle('fresh',updated);
+  $('best-record').classList.toggle('stopped',state.phase==='finished');
+  $('best-update').textContent=state.phase==='finished'&&state.stopReason==='stagnation'
+    ?`40세대 동안 갱신 없어 중지`
+    :updated?`새 최고 기록! +${(latest-previous).toFixed(latest-previous<.01?3:2)}%p`
+    :count===1?'첫 최고 점수 기록':count?`갱신 없이 ${stalled} / ${STAGNATION_LIMIT}세대`:'첫 세대 평가 전';
+  $('scene-count').textContent=`환경 ${state.environmentRound||1} · ${state.generation}세대 · 최고 ${count?latest.toFixed(2)+'%':'평가 전'}`;
   $('previous').disabled=state.generation<=1;
-  $('tip').textContent=state.environmentRound>1?'기존 나방 집단을 유지하고 새 나무 배경에서 점수를 다시 계산했습니다.':'다음 세대를 누르면 평가·선택·교차·변이를 한 번에 진행합니다.';
+  $('auto').disabled=state.phase==='finished';
+  $('tip').textContent=state.phase==='finished'?'최고 점수가 40세대 연속 갱신되지 않아 실험을 멈췄습니다. 처음부터 또는 새 나무 배경에서 다시 시작할 수 있습니다.':state.environmentRound>1?'기존 나방 집단을 유지하고 새 나무 배경에서 점수를 다시 계산했습니다.':'다음 세대를 누르면 평가·선택·교차·변이를 한 번에 진행합니다.';
 };
 $('change-background').addEventListener('click',changeBackground);
 $('rate').addEventListener('input',drawChart);

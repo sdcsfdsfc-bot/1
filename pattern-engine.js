@@ -107,10 +107,12 @@ function patternScore(m,forest=state.forest){
   const mean=difference/(samples.length*3);
   return {mean,score:sigmoid(mean)};
 }
+const BEST_UPDATE_EPSILON=.005;
+const STAGNATION_LIMIT=40;
 function stalledGenerations(scores){
   if(scores.length<2)return 0;
   let lastImprovement=0;
-  for(let i=1;i<scores.length;i++)if(scores[i]>scores[lastImprovement]+.1)lastImprovement=i;
+  for(let i=1;i<scores.length;i++)if(scores[i]>scores[lastImprovement]+BEST_UPDATE_EPSILON)lastImprovement=i;
   return scores.length-1-lastImprovement;
 }
 function geneDisplay(m,j){
@@ -194,7 +196,15 @@ step=function(){
       }
       state.phase='mutated';break;
     }
-    case 'mutated':state.trace.previousBest=state.best.at(-1);state.moths=state.children;state.children=[];state.parents=[];state.generation++;evaluate();state.phase='replaced';break;
+    case 'mutated':{
+      state.trace.previousBest=state.best.at(-1);
+      state.moths=state.children;state.children=[];state.parents=[];state.generation++;evaluate();
+      const stalled=stalledGenerations(state.best);
+      state.phase=stalled>=STAGNATION_LIMIT?'finished':'replaced';
+      state.stopReason=state.phase==='finished'?'stagnation':null;
+      if(state.phase==='finished')stopAuto();
+      break;
+    }
     default:stopAuto();return;
   }
   save();
@@ -238,7 +248,7 @@ renderTrace=function(){
     const models={a,b,before,after:child};content.querySelectorAll('[data-compare]').forEach(canvas=>{const ctx=canvas.getContext('2d');paintPatternMoth(ctx,95,49,models[canvas.dataset.compare],.95,false,null);});
     const pair=state.trace.childParentIndexes?.[index];if(pair)content.querySelector('.trace-callout p').textContent=`자손 ${index+1}번: 부모 A는 나방 ${pair[0]+1}번, 부모 B는 나방 ${pair[1]+1}번입니다. ${phase==='crossed'?'각 숫자를 가중평균했습니다.':'변이된 숫자로 무늬를 다시 그렸습니다.'}`;
   }else{
-    const previous=state.trace.previousBest,current=state.best.at(-1);content.innerHTML=`<div class="trace-callout"><span class="trace-tag">NEXT GENERATION</span><h3>${phase==='finished'?'10세대의 무늬 진화가 끝났습니다':'새로운 세대가 시작됐습니다'}</h3><p>가장 높은 점수의 나방 한 마리를 보존합니다. 무늬와 색이 함께 바뀐 자손을 다시 평가했습니다.</p></div><div class="trace-result"><div><span>이전 최고</span><strong>${previous===undefined?'—':previous.toFixed(1)+'%'}</strong></div><b>→</b><div><span>현재 최고</span><strong>${current.toFixed(1)}%</strong></div></div><div class="pattern-compare">${state.moths.map((m,i)=>({m,i})).sort((a,b)=>b.m.score-a.m.score).slice(0,3).map(({m,i})=>`<div><span>나방 ${i+1} · ${m.score.toFixed(1)}%</span><canvas data-result="${i}" width="190" height="100"></canvas></div>`).join('')}</div>`;content.querySelectorAll('[data-result]').forEach(canvas=>paintPatternMoth(canvas.getContext('2d'),95,49,state.moths[Number(canvas.dataset.result)],.95,false,null));
+    const previous=state.trace.previousBest,current=state.best.at(-1);content.innerHTML=`<div class="trace-callout"><span class="trace-tag">NEXT GENERATION</span><h3>${phase==='finished'?'최고 점수가 40세대 동안 갱신되지 않아 멈췄습니다':'새로운 세대가 시작됐습니다'}</h3><p>가장 높은 점수의 나방 한 마리를 보존합니다. 무늬와 색이 함께 바뀐 자손을 다시 평가했습니다.</p></div><div class="trace-result"><div><span>이전 최고</span><strong>${previous===undefined?'—':previous.toFixed(1)+'%'}</strong></div><b>→</b><div><span>현재 최고</span><strong>${current.toFixed(1)}%</strong></div></div><div class="pattern-compare">${state.moths.map((m,i)=>({m,i})).sort((a,b)=>b.m.score-a.m.score).slice(0,3).map(({m,i})=>`<div><span>나방 ${i+1} · ${m.score.toFixed(1)}%</span><canvas data-result="${i}" width="190" height="100"></canvas></div>`).join('')}</div>`;content.querySelectorAll('[data-result]').forEach(canvas=>paintPatternMoth(canvas.getContext('2d'),95,49,state.moths[Number(canvas.dataset.result)],.95,false,null));
   }
 };
 
