@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="trace.css">
   <link rel="stylesheet" href="tutorial.css">
   <link rel="stylesheet" href="inheritance.css">
-  <link rel="stylesheet" href="pattern.css?v=best-stop-20261119-1">
+  <link rel="stylesheet" href="pattern.css?v=stats-sidebar-20261119-1">
   <script src="app.js" defer></script>
   <script src="pattern-engine.js?v=best-stop-20261119-1" defer></script>
   <script src="tutorial.js?v=mutation-rate-20261119-1" defer></script>
@@ -43,7 +43,7 @@
     </section>
 
     <section id="experiment-page" class="page experiment-page hidden" aria-labelledby="experiment-title">
-      <div class="experiment-heading"><div><p class="eyebrow">THE WHOLE PICTURE</p><h1 id="experiment-title">전체 그림</h1><p>숲속의 나방 24마리와 세대별 점수 변화를 한눈에 보세요.</p></div><div class="experiment-stats"><div class="generation-badge"><span>현재 세대</span><strong id="generation">01</strong></div><div id="best-record" class="best-record"><span>현재 최고 점수</span><strong id="best-score">—</strong><small id="best-update" aria-live="polite">첫 세대 평가 전</small></div></div></div>
+      <div class="experiment-heading"><div><p class="eyebrow">THE WHOLE PICTURE</p><h1 id="experiment-title">전체 그림</h1><p>숲속의 나방 24마리와 세대별 점수 변화를 한눈에 보세요.</p></div></div>
       <div class="toolbar" role="group" aria-label="실험 조작">
         <button id="previous" class="secondary" type="button">← 이전 세대</button>
         <button id="next" class="primary" type="button">다음 세대 →</button>
@@ -54,7 +54,7 @@
       <div class="environment-controls"><div><strong>나무 배경 바꾸기</strong><p>진화한 나방 24마리를 그대로 두고 새 배경에서 다시 평가합니다.</p></div><label>나무 색<select id="bark-theme"><option value="natural">기본 갈색</option><option value="light">밝은 나무</option><option value="dark">어두운 나무</option><option value="moss">이끼 낀 나무</option></select></label><label>나무 무늬<select id="bark-pattern"><option value="normal">보통 무늬</option><option value="smooth">넓은 무늬</option><option value="rough">촘촘한 무늬</option></select></label><button id="change-background" class="secondary" type="button">이 집단으로 새 배경에서 시작 ↗</button></div>
       <div class="stage-strip"><div><span class="stage-label">현재 단계</span><strong id="phase-title">초기 개체군</strong><p id="phase-description">24마리의 나방이 무작위 유전자를 가지고 태어났습니다.</p></div><div id="stage-steps" class="stage-steps" aria-label="진행 단계"></div></div>
       <div class="content-grid"><div class="forest-card"><div class="panel-title"><h2>숲에서 살아남기</h2><span>나방을 눌러 유전자 확인</span></div><canvas id="forest" width="1100" height="700" role="img" aria-label="나무껍질 위에 놓인 나방 24마리"></canvas><div class="forest-footer"><span id="scene-count">장면 1 / 1</span><input id="scene-range" aria-label="장면 이동" type="range" min="0" max="0" value="0"></div></div>
-      <aside class="sidebar"><div class="info-card"><p class="eyebrow">SELECTED MOTH</p><h2 id="moth-heading">나방을 선택하세요</h2><p id="moth-info">나방을 누르면 무늬를 만드는 숫자 유전자와 위장 점수를 볼 수 있습니다.</p><div id="genes" class="genes"></div></div><div class="info-card tip-card"><p class="eyebrow">생각해 보기</p><p id="tip">색과 무늬의 위치가 함께 위장 점수에 영향을 줍니다.</p></div></aside></div>
+      <aside class="sidebar"><div class="experiment-stats"><div class="generation-badge"><span>현재 세대</span><strong id="generation">01</strong></div><div id="best-record" class="best-record"><span>현재 최고 점수</span><strong id="best-score">—</strong><small id="best-update" aria-live="polite">첫 세대 평가 전</small></div></div><div class="info-card"><p class="eyebrow">SELECTED MOTH</p><h2 id="moth-heading">나방을 선택하세요</h2><p id="moth-info">나방을 누르면 무늬를 만드는 숫자 유전자와 위장 점수를 볼 수 있습니다.</p><div id="genes" class="genes"></div></div><div class="info-card tip-card"><p class="eyebrow">생각해 보기</p><p id="tip">색과 무늬의 위치가 함께 위장 점수에 영향을 줍니다.</p></div></aside></div>
       <section class="info-card chart-card progress-card" aria-label="세대별 점수 변화"><div class="progress-card-head"><div><p class="eyebrow">FITNESS OVER TIME</p><h2>세대별 점수 변화</h2><p id="chart-summary">첫 세대를 평가하면 변화가 기록됩니다.</p></div><div class="legend"><span><i class="best-key"></i> 최고 점수</span><span><i class="avg-key"></i> 집단 평균</span></div></div><div class="chart-scroll"><canvas id="chart" width="1100" height="340" role="img" aria-label="첫 세대부터 현재 세대까지의 최고 점수와 집단 평균 그래프"></canvas></div><div class="progress-card-foot"><span id="chart-scale">점수 범위</span><span id="chart-exploration">다음 세대 변이 확률 2% · 선택값과 동일</span></div></section>
       <p class="footer-note">이 모형은 CamoEvo의 무늬 유전 개념을 단순화한 교육용 시뮬레이션입니다. 점수는 색 차이로 계산하며 실제 포식자의 판단을 재현하지 않습니다.</p>
     </section>
