@@ -9,6 +9,13 @@
 .pattern-guide-detail>div:first-child canvas{max-width:100%;background:linear-gradient(130deg,#96735b,#694931);border-radius:8px}
 .pattern-guide-detail p{color:#57715b;font-size:12px;line-height:1.6}
 .pattern-guide-detail>div:last-child{min-width:0}
+.pattern-guide-detail .trace-gene-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.pattern-guide-detail .trace-gene-row{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:8px;min-width:0;min-height:72px;padding:10px 11px;background:#fffdf8;border-color:#dfe7dc}
+.pattern-guide-detail .trace-gene-row>span{font-size:11px;line-height:1.3;overflow-wrap:anywhere}
+.pattern-guide-detail .trace-gene-row>strong{color:#295b3d;font-size:15px;line-height:1}
+.pattern-guide-detail .trace-gene-row:nth-child(-n+3){border-top:3px solid #b7c99f}
+.pattern-guide-detail .trace-gene-row:nth-child(n+4):nth-child(-n+6){border-top:3px solid #d8b575}
+.pattern-guide-detail .trace-gene-row:nth-child(n+7){border-top:3px solid #8ba8a1}
 .pattern-color-pair{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .pattern-color-pair span{display:flex;align-items:center;gap:8px;color:#456951;font-size:12px;font-weight:700;background:#f4f7f0;padding:8px 10px;border-radius:6px}
 .pattern-color-pair i{display:inline-block;width:24px;height:24px;border:1px solid #0002;border-radius:4px}
