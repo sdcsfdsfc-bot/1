@@ -107,6 +107,12 @@ function patternScore(m,forest=state.forest){
   const mean=difference/(samples.length*3);
   return {mean,score:sigmoid(mean)};
 }
+function stalledGenerations(scores){
+  if(scores.length<2)return 0;
+  let lastImprovement=0;
+  for(let i=1;i<scores.length;i++)if(scores[i]>scores[lastImprovement]+.1)lastImprovement=i;
+  return scores.length-1-lastImprovement;
+}
 function geneDisplay(m,j){
   const value=m.genes[j];return j<6?value.toFixed(1):value.toFixed(2);
 }
@@ -178,12 +184,21 @@ step=function(){
       state.phase='crossed';break;
     }
     case 'crossed':{
-      const rate=Number($('rate').value)/100;state.trace.beforeMutation=clone(state.children);state.trace.mutationRate=rate;
+      const baseRate=Number($('rate').value)/100,stalled=stalledGenerations(state.best);
+      const boost=baseRate>0&&stalled>=4?Math.min(.16,.04*Math.floor(stalled/4)):0;
+      const rate=Math.min(.5,baseRate+boost),spread=.26+(boost>0?Math.min(.16,boost):0);
+      state.trace.beforeMutation=clone(state.children);state.trace.mutationRate=rate;state.trace.baseMutationRate=baseRate;state.trace.stalled=stalled;
       for(const child of state.children.slice(1))for(let j=0;j<GENE_COUNT;j++)if(Math.random()<rate){
         const spec=PATTERN_GENES[j],span=spec.max-spec.min;
-        const delta=(Math.random()+Math.random()+Math.random()-1.5)*span*.26;
+        const delta=(Math.random()+Math.random()+Math.random()-1.5)*span*spread;
         child.genes[j]=Math.random()<.08?spec.min+Math.random()*span:clamp(child.genes[j]+delta,spec.min,spec.max);child.mutations.push(j);
       }
+      const newcomers=baseRate>0&&stalled>=6?Math.min(4,1+Math.floor((stalled-6)/5)):0;
+      for(let i=0;i<newcomers;i++){
+        const child=state.children[state.children.length-1-i];
+        child.genes=patternGenome().genes;child.mutations=PATTERN_GENES.map((_,j)=>j);child.newCandidate=true;
+      }
+      state.trace.newCandidates=newcomers;
       state.phase='mutated';break;
     }
     case 'mutated':state.trace.previousBest=state.best.at(-1);state.moths=state.children;state.children=[];state.parents=[];state.generation++;evaluate();state.phase='replaced';break;

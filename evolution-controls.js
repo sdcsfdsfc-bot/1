@@ -47,18 +47,37 @@ drawForest=function(){
 };
 
 drawChart=function(){
-  const canvas=$('chart'),ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height,l=35,r=w-14,t=16,b=h-29;
-  ctx.clearRect(0,0,w,h);ctx.font='12px sans-serif';ctx.textAlign='right';
-  for(let n=0;n<=100;n+=25){const y=b-(b-t)*n/100;ctx.strokeStyle='#e6ece5';ctx.beginPath();ctx.moveTo(l,y);ctx.lineTo(r,y);ctx.stroke();ctx.fillStyle='#91a294';ctx.fillText(String(n),l-7,y+4);}
-  const start=Math.max(0,state.best.length-15),count=Math.min(15,state.best.length),span=Math.max(1,count-1);
-  ctx.textAlign='center';
-  for(let i=0;i<count;i++){if(i===0||i===count-1||i%3===0){const x=l+(r-l)*i/span;ctx.fillStyle='#91a294';ctx.fillText(String(start+i+1),x,h-8);}}
-  for(const [series,color] of [[state.best,'#2e8054'],[state.avg,'#c9a86c']]){
-    const values=series.slice(start);if(!values.length)continue;
-    ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();
-    values.forEach((v,i)=>{const x=l+(r-l)*i/span,y=b-(b-t)*v/100;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();
-    values.forEach((v,i)=>ellipse(ctx,l+(r-l)*i/span,b-(b-t)*v/100,3.5,3.5,color));
+  const canvas=$('chart'),ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height,l=55,r=w-22,t=24,b=h-42;
+  ctx.clearRect(0,0,w,h);ctx.font='12px sans-serif';
+  const count=state.best.length;
+  if(!count){$('chart-summary').textContent='첫 세대를 평가하면 변화가 기록됩니다.';$('chart-scale').textContent='전체 세대 · 점수 범위';$('chart-exploration').textContent='점수가 정체되면 변이와 새로운 후보로 다른 무늬를 탐색합니다.';return;}
+  const values=[...state.best,...state.avg],minimum=Math.min(...values),maximum=Math.max(...values),padding=Math.max(5,(maximum-minimum)*.16);
+  let lower=Math.max(0,Math.floor((minimum-padding)/5)*5),upper=Math.min(100,Math.ceil((maximum+padding)/5)*5);
+  if(upper-lower<10){lower=Math.max(0,lower-5);upper=Math.min(100,upper+5);}
+  const xAt=i=>l+(r-l)*i/Math.max(1,count-1),yAt=value=>b-(b-t)*(value-lower)/(upper-lower);
+  ctx.textAlign='right';
+  for(let i=0;i<=4;i++){
+    const value=lower+(upper-lower)*i/4,y=yAt(value);
+    ctx.strokeStyle='#e4ebe2';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(l,y);ctx.lineTo(r,y);ctx.stroke();
+    ctx.fillStyle='#758a79';ctx.fillText(`${value.toFixed(value%1?1:0)}%`,l-9,y+4);
   }
+  const labelCount=Math.min(8,count),labels=new Set();
+  for(let i=0;i<labelCount;i++)labels.add(Math.round(i*(count-1)/Math.max(1,labelCount-1)));
+  ctx.textAlign='center';
+  for(const i of labels){const x=xAt(i);ctx.fillStyle='#758a79';ctx.fillText(String(i+1),x,h-16);}
+  for(const [series,color] of [[state.avg,'#c9a86c'],[state.best,'#2e8054']]){
+    ctx.strokeStyle=color;ctx.lineWidth=3;ctx.lineJoin='round';ctx.beginPath();
+    series.forEach((value,i)=>{const x=xAt(i),y=yAt(value);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();
+    if(count<=65)series.forEach((value,i)=>ellipse(ctx,xAt(i),yAt(value),3.3,3.3,color));
+  }
+  const initial=state.best[0],latest=state.best.at(-1),gain=latest-initial,stalled=stalledGenerations(state.best),baseRate=Number($('rate').value)/100;
+  $('chart-summary').textContent=`${count}세대 전체 기록 · 첫 최고 ${initial.toFixed(1)}% → 현재 최고 ${latest.toFixed(1)}% · 변화 ${gain>=0?'+':''}${gain.toFixed(1)}%p`;
+  $('chart-scale').textContent=`세로축 ${lower}~${upper}%로 확대 · 가로축은 세대`;
+  if(stalled>=4&&baseRate>0){
+    const rate=Math.min(.5,baseRate+Math.min(.16,.04*Math.floor(stalled/4)));
+    const newcomers=stalled>=6?Math.min(4,1+Math.floor((stalled-6)/5)):0;
+    $('chart-exploration').textContent=`최고 점수 ${stalled}세대 정체 · 다음 세대 변이 ${Math.round(rate*100)}%${newcomers?` · 새 후보 ${newcomers}마리 투입`:''}`;
+  }else $('chart-exploration').textContent=stalled?`최고 점수 ${stalled}세대 유지 · 최고 나방은 보존합니다.`:'최고 점수가 새로 개선됐습니다.';
 };
 
 function advanceGeneration(){
@@ -95,4 +114,5 @@ render=function(){
   $('tip').textContent=state.environmentRound>1?'기존 나방 집단을 유지하고 새 나무 배경에서 점수를 다시 계산했습니다.':'다음 세대를 누르면 평가·선택·교차·변이를 한 번에 진행합니다.';
 };
 $('change-background').addEventListener('click',changeBackground);
+$('rate').addEventListener('input',drawChart);
 reset();

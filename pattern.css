@@ -88,6 +88,16 @@
 .environment-controls select{width:100%;height:39px;border:1px solid #cbdacb;border-radius:6px;background:#fffdf8;padding:0 9px;color:#31543c;font:inherit;font-size:12px}
 .environment-controls button{min-height:39px;white-space:normal;line-height:1.3}
 .experiment-page .forest-footer{justify-content:flex-start}
+.progress-card{margin-top:14px;padding:22px 26px}
+.progress-card-head,.progress-card-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:18px}
+.progress-card-head h2{font-size:20px;margin:0 0 5px;color:#244d37}
+.progress-card-head p:last-child{font-size:13px;color:#607b66;margin:0}
+.progress-card .legend{gap:18px;padding-bottom:5px;white-space:nowrap}
+.progress-card .legend i{height:4px;width:18px;border-radius:3px}
+.chart-scroll{overflow-x:auto}
+.progress-card #chart{display:block;width:100%;height:auto;max-height:380px;margin:17px 0 7px}
+.progress-card-foot{align-items:center;color:#718474;font-size:11px;line-height:1.5}
+.progress-card-foot span:last-child{text-align:right}
 @media(max-width:1000px){.environment-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.environment-controls>div,.environment-controls button{grid-column:1/-1}}
 @media(max-width:850px){.course-nav{grid-template-columns:repeat(2,minmax(0,1fr))}.guide-dual-process{grid-template-columns:1fr}.pattern-guide-pop{grid-template-columns:repeat(4,minmax(0,1fr))}.pattern-guide-detail{grid-template-columns:1fr}.pattern-compare{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:650px){.course-nav button{min-height:57px}.pattern-guide-pop{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.pattern-guide-moth{padding:5px}.pattern-guide-moth span{font-size:10px}.pattern-guide-detail{padding:12px}.pattern-stages{grid-template-columns:1fr}.pattern-stages canvas{height:120px}.guide-dual-process .pattern-stages{grid-template-columns:repeat(3,minmax(0,1fr))}.guide-dual-process .pattern-stages canvas{height:52px}.guide-gene-cards.shape{grid-template-columns:repeat(2,minmax(0,1fr))}.guide-gene-group-title{display:block}.guide-gene-variants{gap:4px}.guide-gene-variants>div{padding:4px}}
+@media(max-width:650px){.course-nav button{min-height:57px}.pattern-guide-pop{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.pattern-guide-moth{padding:5px}.pattern-guide-moth span{font-size:10px}.pattern-guide-detail{padding:12px}.pattern-stages{grid-template-columns:1fr}.pattern-stages canvas{height:120px}.guide-dual-process .pattern-stages{grid-template-columns:repeat(3,minmax(0,1fr))}.guide-dual-process .pattern-stages canvas{height:52px}.guide-gene-cards.shape{grid-template-columns:repeat(2,minmax(0,1fr))}.guide-gene-group-title{display:block}.guide-gene-variants{gap:4px}.guide-gene-variants>div{padding:4px}.progress-card{padding:16px}.progress-card-head,.progress-card-foot{display:block}.progress-card .legend{margin-top:10px}.progress-card #chart{min-width:720px}.progress-card-foot span{display:block;text-align:left!important;margin-top:5px}}
