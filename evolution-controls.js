@@ -6,6 +6,28 @@ forestColor=function(f,index){
   if(theme==='moss')return [Math.round(c[0]*.59),Math.round(clamp(c[1]*.78+37,0,255)),Math.round(c[2]*.67+18)];
   return c;
 };
+const makeBaseForest=makeForest;
+makeForest=function(theme='natural',pattern='normal'){
+  const forest=makeBaseForest(theme,pattern);
+  forest.genes=makeForestGenome(theme,pattern).genes;
+  forest.patches=[];
+  return forest;
+};
+treeColor=function(x,y){
+  const f=state.forest;
+  return f.genes?forestPatternColor(f,x,y):forestColor(f,f.base);
+};
+const FOREST_TEXTURES=new WeakMap();
+function forestTexture(f){
+  if(FOREST_TEXTURES.has(f))return FOREST_TEXTURES.get(f);
+  const canvas=document.createElement('canvas');canvas.width=220;canvas.height=140;
+  const ctx=canvas.getContext('2d'),pixels=ctx.createImageData(220,140),colors=geneColors(f);
+  for(let y=0;y<140;y++)for(let x=0;x<220;x++){
+    const c=patternColor(f,x/220*3,y/140*2.5,colors),i=(y*220+x)*4;
+    pixels.data[i]=c[0];pixels.data[i+1]=c[1];pixels.data[i+2]=c[2];pixels.data[i+3]=255;
+  }
+  ctx.putImageData(pixels,0,0);FOREST_TEXTURES.set(f,canvas);return canvas;
+}
 
 drawForest=function(){
   const canvas=$('forest'),ctx=canvas.getContext('2d'),f=state.forest;
@@ -14,7 +36,8 @@ drawForest=function(){
   for(let i=0;i<18;i++){ctx.fillStyle=i%2?'#456d4b44':'#a4b98b66';ctx.fillRect(i*70-10,0,20+i%4*8,700);}
   ctx.fillStyle=rgb(forestColor(f,f.base));ctx.beginPath();ctx.moveTo(110,80);ctx.lineTo(990,80);ctx.lineTo(1090,700);ctx.lineTo(10,700);ctx.closePath();ctx.fill();
   ctx.save();ctx.beginPath();ctx.moveTo(110,80);ctx.lineTo(990,80);ctx.lineTo(1090,700);ctx.lineTo(10,700);ctx.closePath();ctx.clip();
-  for(const p of f.patches)ellipse(ctx,p.x,p.y,p.rx,p.ry,rgb(forestColor(f,p.color)));
+  if(f.genes){ctx.imageSmoothingEnabled=false;ctx.drawImage(forestTexture(f),0,0,1100,700);}
+  else for(const p of f.patches)ellipse(ctx,p.x,p.y,p.rx,p.ry,rgb(forestColor(f,p.color)));
   ctx.strokeStyle='#402e2240';ctx.lineWidth=3;
   for(let i=0;i<18;i++){const x=65+i*61;ctx.beginPath();ctx.moveTo(x,90);ctx.bezierCurveTo(x+15,300,x-15,480,x+25,700);ctx.stroke();}
   ctx.restore();
@@ -72,4 +95,4 @@ render=function(){
   $('tip').textContent=state.environmentRound>1?'기존 나방 집단을 유지하고 새 나무 배경에서 점수를 다시 계산했습니다.':'다음 세대를 누르면 평가·선택·교차·변이를 한 번에 진행합니다.';
 };
 $('change-background').addEventListener('click',changeBackground);
-render();
+reset();

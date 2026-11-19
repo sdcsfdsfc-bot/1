@@ -64,18 +64,35 @@ function patternColor(m,u,v,colors=geneColors(m)){
   return source.map(channel=>Math.round(clamp(channel+(mark?-1:1)*edge*36,0,255)));
 }
 function patternGenome(random=Math.random){return {genes:PATTERN_GENES.map(spec=>spec.min+random()*(spec.max-spec.min)),score:null,mutations:[]};}
+function makeForestGenome(theme='natural',pattern='normal',random=Math.random){
+  const palette={
+    natural:[[39,13,24],[55,11,32]],
+    light:[[69,6,18],[79,4,14]],
+    dark:[[27,10,14],[41,9,23]],
+    moss:[[43,-19,21],[57,-8,30]]
+  }[theme]||[[39,13,24],[55,11,32]];
+  const g=patternGenome(random).genes;
+  for(let j=0;j<6;j++){const value=palette[Math.floor(j/3)][j%3]+(random()-.5)*(j%3===0?5:4);g[j]=clamp(value,PATTERN_GENES[j].min,PATTERN_GENES[j].max);}
+  const settings={smooth:[.5,.7,.58,1.3,.10,.01],normal:[1.5,1.18,.49,1.05,.23,.08],rough:[2.5,1.85,.43,.75,.42,.25]}[pattern]||[1.5,1.18,.49,1.05,.23,.08];
+  for(let j=6;j<12;j++)g[j]=clamp(settings[j-6]+(random()-.5)*(j===6?.25:.08),PATTERN_GENES[j].min,PATTERN_GENES[j].max);
+  return {genes:g};
+}
+function forestPatternColor(f,x,y,colors=geneColors(f)){
+  const tx=clamp(Math.floor(x/5),0,219),ty=clamp(Math.floor(y/5),0,139);
+  return patternColor(f,tx/220*3,ty/140*2.5,colors);
+}
 const PATTERN_SAMPLES=new WeakMap();
 function forestSamples(forest){
   if(PATTERN_SAMPLES.has(forest))return PATTERN_SAMPLES.get(forest);
-  const samples=[];
+  const samples=[],forestColors=forest.genes?geneColors(forest):null;
   for(let slot=0;slot<POP_SIZE;slot++){
     const [cx,cy]=position(slot);
     for(const side of [-1,1])for(let gx=0;gx<9;gx++)for(let gy=0;gy<6;gy++){
       const u=(gx+.5)/9,v=(gy+.5)/6;
       if(v>1-.5*u+.12)continue;
       const px=cx+side*(7+u*62),py=cy-25+v*50;
-      let background=forestColor(forest,forest.base);
-      for(let i=forest.patches.length-1;i>=0;i--){const p=forest.patches[i];if(((px-p.x)/p.rx)**2+((py-p.y)/p.ry)**2<=1){background=forestColor(forest,p.color);break;}}
+      let background=forest.genes?forestPatternColor(forest,px,py,forestColors):forestColor(forest,forest.base);
+      if(!forest.genes)for(let i=forest.patches.length-1;i>=0;i--){const p=forest.patches[i];if(((px-p.x)/p.rx)**2+((py-p.y)/p.ry)**2<=1){background=forestColor(forest,p.color);break;}}
       samples.push({u,v,background});
     }
   }
@@ -118,13 +135,13 @@ function paintPatternMoth(ctx,x,y,m,scale=1,selected=false,badge=null){
   ctx.restore();
   if(badge!==null){ctx.fillStyle='#173b32dd';ctx.beginPath();ctx.roundRect(x-28*scale,y+43*scale,56*scale,22*scale,7*scale);ctx.fill();ctx.fillStyle='white';ctx.font=`700 ${11*scale}px sans-serif`;ctx.textAlign='center';ctx.fillText(badge,x,y+58*scale);}
 }
-function drawPatternStages(m){
-  const canvases=document.querySelectorAll('[data-pattern-stage]');
+function drawPatternStages(m,root=document,forest=false){
+  const canvases=root.querySelectorAll('[data-pattern-stage]');
   canvases.forEach(canvas=>{
     const ctx=canvas.getContext('2d'),stage=canvas.dataset.patternStage,w=canvas.width,h=canvas.height,colors=geneColors(m);
     ctx.clearRect(0,0,w,h);
     for(let x=0;x<w;x+=4)for(let y=0;y<h;y+=4){
-      const u=(x+2)/w,v=(y+2)/h,value=patternValue(m,u,v);
+      const u=(x+2)/w*(forest?3:1),v=(y+2)/h*(forest?2.5:1),value=patternValue(m,u,v);
       if(stage==='texture'){const gray=Math.round(value*255);ctx.fillStyle=rgb([gray,gray,gray]);}
       else if(stage==='mask'){ctx.fillStyle=value>=m.genes[8]?'#fff':'#1f3029';}
       else ctx.fillStyle=rgb(patternColor(m,u,v,colors));
@@ -132,7 +149,7 @@ function drawPatternStages(m){
     }
   });
 }
-function patternStagesMarkup(){return `<div class="pattern-stages"><div><span>① 반응·확산 무늬</span><canvas width="150" height="90" data-pattern-stage="texture"></canvas><small>밝고 어두운 연속값</small></div><div><span>② 기준값으로 분리</span><canvas width="150" height="90" data-pattern-stage="mask"></canvas><small>무늬 / 바탕 영역</small></div><div><span>③ 두 색 입히기</span><canvas width="150" height="90" data-pattern-stage="colored"></canvas><small>자손의 최종 색 배치</small></div></div>`;}
+function patternStagesMarkup(id=''){return `<div ${id?`id="${id}"`:''} class="pattern-stages"><div><span>① 반응·확산 무늬</span><canvas width="150" height="90" data-pattern-stage="texture"></canvas><small>밝고 어두운 연속값</small></div><div><span>② 기준값으로 분리</span><canvas width="150" height="90" data-pattern-stage="mask"></canvas><small>무늬 / 바탕 영역</small></div><div><span>③ 두 색 입히기</span><canvas width="150" height="90" data-pattern-stage="colored"></canvas><small>완성된 색 무늬</small></div></div>`;}
 
 moth=()=>patternGenome();
 candidateScore=m=>patternScore(m).score;
