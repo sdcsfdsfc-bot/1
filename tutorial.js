@@ -23,9 +23,10 @@ function makeGuideRounds(){
     const childrenAfter=childrenBefore.map(guideClone),mutations=[];
     for(let i=1;i<12;i++)for(let j=0;j<GENE_COUNT;j++)if(guideRandom()<.12){
       const spec=PATTERN_GENES[j],old=childrenAfter[i].genes[j],span=spec.max-spec.min,delta=(guideRandom()+guideRandom()+guideRandom()-1.5)*span*.26;
-      childrenAfter[i].genes[j]=guideRandom()<.08?spec.min+guideRandom()*span:clamp(old+delta,spec.min,spec.max);childrenAfter[i].mutations.push(j);mutations.push({child:i,gene:j,old,next:childrenAfter[i].genes[j]});
+      const reroll=guideRandom()<.08;
+      childrenAfter[i].genes[j]=reroll?spec.min+guideRandom()*span:clamp(old+delta,spec.min,spec.max);childrenAfter[i].mutations.push(j);mutations.push({child:i,gene:j,old,next:childrenAfter[i].genes[j],reroll});
     }
-    if(!mutations.length){const i=1,j=7,old=childrenAfter[i].genes[j];childrenAfter[i].genes[j]=clamp(old+.18,PATTERN_GENES[j].min,PATTERN_GENES[j].max);childrenAfter[i].mutations.push(j);mutations.push({child:i,gene:j,old,next:childrenAfter[i].genes[j]});}
+    if(!mutations.length){const i=1,j=7,old=childrenAfter[i].genes[j];childrenAfter[i].genes[j]=clamp(old+.18,PATTERN_GENES[j].min,PATTERN_GENES[j].max);childrenAfter[i].mutations.push(j);mutations.push({child:i,gene:j,old,next:childrenAfter[i].genes[j],reroll:false});}
     childrenAfter.forEach(guideEvaluate);
     const focus=mutations[0].child;
     rounds.push({before,weights,total,draws:childDraws[focus],parents:childParents[focus],eliteIndex,childrenBefore,childrenAfter,sources,mutations,focus});
@@ -53,6 +54,16 @@ function guideFrames(){return guidePart1;}
 function guidePopulation(pop,emphasis=[],reveal=true){
   return `<div class="pattern-guide-pop">${pop.map((m,i)=>`<div class="pattern-guide-moth ${emphasis.includes(i)?'emphasis':''}"><span>나방 ${i+1}</span><canvas width="150" height="100" data-guide-moth="${i}"></canvas><strong>${reveal?m.score.toFixed(1)+'%':'점수 ?'}</strong></div>`).join('')}</div>`;
 }
+function guideWorkedExample(round,kind,a,b,before,after){
+  if(kind==='mutation'){
+    const change=round.mutations.find(m=>m.child===round.focus),precision=change.gene<6?1:2;
+    const old=change.old.toFixed(precision),next=change.next.toFixed(precision),delta=change.next-change.old;
+    return `<div class="guide-worked"><span>한 유전자의 변화</span><h4>${PATTERN_GENES[change.gene].name}</h4><div class="guide-worked-flow"><div><small>교차 직후</small><strong>${old}</strong></div><b>→</b><div><small>${change.reroll?'새 숫자 뽑기':`변이 ${delta>=0?'+':''}${delta.toFixed(precision)}`}</small><strong>${next}</strong></div></div><p>바뀐 숫자로 날개 전체를 다시 그린 뒤 위장 점수를 다시 계산합니다.</p></div>`;
+  }
+  const j=kind==='crossColor'?0:7,w=round.sources[round.focus][j],digits=j<6?1:2;
+  const av=a.genes[j].toFixed(digits),bv=b.genes[j].toFixed(digits),cv=before.genes[j].toFixed(digits);
+  return `<div class="guide-worked"><span>한 유전자 계산 예시</span><h4>${PATTERN_GENES[j].name}</h4><div class="guide-worked-flow"><div><small>부모 A</small><strong>${av}</strong></div><b>× ${(w*100).toFixed(1)}% +</b><div><small>부모 B</small><strong>${bv}</strong></div><b>× ${((1-w)*100).toFixed(1)}% =</b><div class="result"><small>자손</small><strong>${cv}</strong></div></div><p>부모의 같은 유전자끼리 계산합니다. 나머지 유전자도 각자의 비율로 계산합니다.</p></div>`;
+}
 function guideVisual(frame){
   const round=GUIDE_ROUNDS[frame.round],kind=frame.kind,showAfter=kind==='replace',pop=showAfter?round.childrenAfter:round.before;
   const selected=kind==='draw'?round.parents:[],focus=round.focus,chosen=kind==='genome'||kind==='make'||kind==='evaluate'?round.before.reduce((best,m,i)=>m.score>round.before[best].score?i:best,0):focus;
@@ -65,7 +76,11 @@ function guideVisual(frame){
   }else if(kind==='crossColor'||kind==='crossShape'||kind==='mutation'){
     const [a,b]=round.parents.map(i=>round.before[i]),before=round.childrenBefore[focus],after=round.childrenAfter[focus];
     const indices=kind==='crossColor'?[0,1,2,3,4,5]:kind==='crossShape'?[6,7,8,9,10,11]:after.mutations;
-    extra=`<div class="guide-evidence"><h3>부모 A(${round.parents[0]+1}) + B(${round.parents[1]+1}) → 자손 ${focus+1}</h3>${patternInheritance(a,b,before,round.sources[focus],kind==='mutation'?after:null,indices)}<div class="pattern-compare"><div><span>부모 A</span><canvas width="190" height="100" data-guide-compare="a"></canvas></div><div><span>부모 B</span><canvas width="190" height="100" data-guide-compare="b"></canvas></div><div><span>교차 직후</span><canvas width="190" height="100" data-guide-compare="before"></canvas></div>${kind==='mutation'?'<div><span>변이 후</span><canvas width="190" height="100" data-guide-compare="after"></canvas></div>':''}</div>${kind==='mutation'?`<p>변이된 유전자: ${after.mutations.map(j=>PATTERN_GENES[j].name).join(', ')||'없음'} · 점수 ${before.score.toFixed(1)}% → ${after.score.toFixed(1)}%</p>`:''}</div>`;
+    const worked=guideWorkedExample(round,kind,a,b,before,after);
+    const compare=kind==='mutation'
+      ?'<div class="pattern-compare guide-mutation-compare"><div><span>교차 직후</span><canvas width="190" height="100" data-guide-compare="before"></canvas></div><div><span>변이 후</span><canvas width="190" height="100" data-guide-compare="after"></canvas></div></div>'
+      :'<div class="pattern-compare"><div><span>부모 A</span><canvas width="190" height="100" data-guide-compare="a"></canvas></div><div><span>부모 B</span><canvas width="190" height="100" data-guide-compare="b"></canvas></div><div><span>교차 직후 자손</span><canvas width="190" height="100" data-guide-compare="before"></canvas></div></div>';
+    extra=`<div class="guide-evidence"><h3>${kind==='mutation'? `자손 ${focus+1}: 교차 직후 → 변이 후`:`부모 A(${round.parents[0]+1}) + B(${round.parents[1]+1}) → 자손 ${focus+1}`}</h3>${worked}${compare}${kind==='mutation'?`<p class="guide-score-change">위장 점수 <strong>${before.score.toFixed(1)}%</strong> → <strong>${after.score.toFixed(1)}%</strong></p>`:''}${patternInheritance(a,b,before,round.sources[focus],kind==='mutation'?after:null,indices)}</div>`;
   }else if(kind==='replace'){
     extra=`<div class="guide-evidence"><h3>세대 변화</h3><div class="guide-result-metrics"><span>이전 최고 <strong>${Math.max(...round.before.map(m=>m.score)).toFixed(1)}%</strong></span><b>→</b><span>새 세대 최고 <strong>${Math.max(...round.childrenAfter.map(m=>m.score)).toFixed(1)}%</strong></span></div><p>이전 세대 최고였던 나방 ${round.eliteIndex+1}번을 변이 없이 보존했습니다.</p></div>`;
   }

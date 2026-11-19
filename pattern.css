@@ -23,6 +23,19 @@
 .pattern-compare>div{min-width:0;background:#f3f5ed;border:1px solid #dce5d9;border-radius:7px;padding:9px}
 .pattern-compare span{display:block;color:#44674d;font-size:11px;font-weight:800;margin-bottom:7px}
 .pattern-compare canvas{display:block;width:100%;height:auto;max-width:190px;margin:auto;background:linear-gradient(130deg,#96735b,#694931);border-radius:5px}
+.guide-worked{background:#fffdf8;border:1px solid #c9dcc8;border-left:4px solid #4d9565;border-radius:8px;padding:15px 17px;margin:13px 0;color:#355d42}
+.guide-worked>span{display:block;color:#5a8063;font-size:11px;font-weight:800;letter-spacing:.06em}
+.guide-worked h4{margin:5px 0 12px;font-size:16px;color:#234e35}
+.guide-worked-flow{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.guide-worked-flow>div{min-width:76px;padding:8px 12px;background:#edf3e9;border-radius:6px;text-align:center}
+.guide-worked-flow>div.result{background:#dcebd8}
+.guide-worked-flow small{display:block;color:#687f6b;font-size:11px}
+.guide-worked-flow strong{display:block;margin-top:3px;color:#255b3b;font-size:20px}
+.guide-worked-flow>b{color:#5f7962;font-size:13px;white-space:nowrap}
+.guide-worked p{font-size:12px;line-height:1.6;margin:11px 0 0}
+.guide-mutation-compare{grid-template-columns:repeat(2,minmax(0,190px))}
+.guide-score-change{margin:13px 0 0;font-size:14px;color:#315d3f}
+.guide-score-change strong{font-size:18px}
 .trace-table-wrap{max-height:420px;overflow:auto}
 .course-nav{grid-template-columns:repeat(2,minmax(0,1fr))}
 .guide-step-strip{display:flex;gap:5px;overflow-x:auto;padding:4px 0 13px;scrollbar-width:thin}

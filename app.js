@@ -1,4 +1,4 @@
-const POP_SIZE = 12;
+const POP_SIZE = 24;
 const MAX_GENERATIONS = 10;
 const PALETTE = [[42,103,65],[80,130,74],[130,161,83],[177,151,92],[104,75,55],[70,119,132],[180,111,73],[196,184,141],[119,91,143],[218,119,145],[45,81,120],[160,96,126],[211,167,94],[105,109,108],[230,210,174]];
 const BARK = [[76,43,29],[94,54,35],[111,65,42],[128,76,49],[145,88,57],[158,101,67],[126,80,58],[171,116,79],[102,70,52],[190,137,94]];
@@ -27,7 +27,7 @@ const clone = x => JSON.parse(JSON.stringify(x));
 let state, history=[], cursor=0, autoTimer=null;
 
 function moth(){return {colors:Array.from({length:6},()=>rnd(PALETTE.length)),spots:2+rnd(5),score:null,mutations:[]};}
-function position(i){return [155+(i%6)*158,195+Math.floor(i/6)*195];}
+function position(i){return [180+(i%6)*148,160+Math.floor(i/6)*145];}
 function makeForest(theme='natural',pattern='normal'){const patches=[],leaves=[],count={smooth:35,normal:150,rough:260}[pattern]||150;for(let i=0;i<count;i++){const x=95+Math.random()*910,y=125+Math.random()*540,rx=pattern==='rough'?9+rnd(28):18+rnd(42),ry=pattern==='rough'?8+rnd(22):13+rnd(31);const left=110-(y-80)*100/620,right=990+(y-80)*100/620;if(x>left+rx+10&&x<right-rx-10)patches.push({x,y,rx,ry,color:rnd(BARK.length)});}for(let i=0;i<38;i++){const x=35+rnd(1031),y=-55+rnd(281),rx=18+rnd(38),ry=15+rnd(24);if(((x-550)/515)**2+((y-70)/165)**2<=1)leaves.push({x,y,rx,ry,color:rnd(LEAVES.length)});}return {base:3,patches,leaves,theme,pattern};}
 function forestColor(f,index){return BARK[index];}
 function treeColor(x,y){for(let i=state.forest.patches.length-1;i>=0;i--){const p=state.forest.patches[i];if(((x-p.x)/p.rx)**2+((y-p.y)/p.ry)**2<=1)return forestColor(state.forest,p.color);}return forestColor(state.forest,state.forest.base);}

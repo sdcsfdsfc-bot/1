@@ -176,7 +176,7 @@ step=function(){
 };
 
 render=function(){
-  const copy={initial:['초기 개체군','바탕색·무늬색·형태를 정하는 숫자 유전자를 가진 나방 12마리입니다.'],evaluated:['적합도 평가','무늬 전체의 색을 나무껍질과 비교해 점수를 계산했습니다.'],selected:['부모 선택','위장 점수로 부모 두 마리를 선택했습니다.'],crossed:['유전자 교차','부모의 대응하는 숫자 유전자를 가중평균해 자손을 만들었습니다.'],mutated:['돌연변이','일부 숫자 유전자를 조금 바꿔 무늬를 다시 그렸습니다.'],replaced:['세대 교체','자손을 평가하고 다음 세대로 넘어왔습니다.'],finished:['실험 완료','10세대의 무늬 진화를 살펴보세요.']}[state.phase];
+  const copy={initial:['초기 개체군','바탕색·무늬색·형태를 정하는 숫자 유전자를 가진 나방 24마리입니다.'],evaluated:['적합도 평가','무늬 전체의 색을 나무껍질과 비교해 점수를 계산했습니다.'],selected:['부모 선택','위장 점수로 부모 두 마리를 선택했습니다.'],crossed:['유전자 교차','부모의 대응하는 숫자 유전자를 가중평균해 자손을 만들었습니다.'],mutated:['돌연변이','일부 숫자 유전자를 조금 바꿔 무늬를 다시 그렸습니다.'],replaced:['세대 교체','자손을 평가하고 다음 세대로 넘어왔습니다.'],finished:['실험 완료','무늬 진화를 살펴보세요.']}[state.phase];
   $('generation').textContent=String(state.generation).padStart(2,'0');$('phase-title').textContent=copy[0];$('phase-description').textContent=copy[1];$('tip').textContent='색과 무늬의 위치가 함께 위장 점수에 영향을 줍니다.';
   $('previous').disabled=cursor===0;$('next').disabled=state.phase==='finished'&&cursor===history.length-1;$('scene-count').textContent=`장면 ${cursor+1} / ${history.length}`;$('scene-range').max=Math.max(0,history.length-1);$('scene-range').value=cursor;
   const stages=['평가','선택','교차','변이','교체'],active={initial:-1,evaluated:0,selected:1,crossed:2,mutated:3,replaced:4,finished:4}[state.phase];$('stage-steps').innerHTML=stages.map((s,i)=>`<span class="${i===active?'current':''}">${s}</span>`).join('');
@@ -203,7 +203,7 @@ renderTrace=function(){
     const weights=state.trace.parentWeights,total=weights.reduce((a,b)=>a+b,0);
     content.innerHTML=`<div class="trace-callout"><span class="trace-tag">SELECTION</span><h3>발견되기 어려운 무늬의 유전자가 더 자주 선택됩니다</h3><p>점수 + 1을 추첨 가중치로 사용합니다. 아래는 첫 자손의 부모이며, 다른 자손의 부모는 각자 다시 뽑습니다.</p><div class="trace-parent-pair"><span>부모 A <strong>나방 ${state.parents[0]+1}</strong></span><span>부모 B <strong>나방 ${state.parents[1]+1}</strong></span></div></div><div class="trace-table-wrap"><table class="trace-table"><thead><tr><th>나방</th><th>점수</th><th>부모 선택 확률</th></tr></thead><tbody>${state.moths.map((m,i)=>`<tr class="${state.parents.includes(i)?'chosen':''}"><td>${i+1}</td><td>${m.score.toFixed(1)}%</td><td>${(100*weights[i]/total).toFixed(1)}%</td></tr>`).join('')}</tbody></table></div>`;
   }else if(phase==='crossed'||phase==='mutated'){
-    const index=Math.min(Math.max(state.focusChild,0),11),child=state.children[index],before=state.trace.beforeMutation?.[index]||child,[a,b]=state.trace.childParents?.[index]||state.trace.parentMoths,weights=state.trace.crossSources[index];
+    const index=Math.min(Math.max(state.focusChild,0),POP_SIZE-1),child=state.children[index],before=state.trace.beforeMutation?.[index]||child,[a,b]=state.trace.childParents?.[index]||state.trace.parentMoths,weights=state.trace.crossSources[index];
     if(index===0){
       content.innerHTML=`<div class="trace-callout"><span class="trace-tag">ELITE</span><h3>최고 점수 나방을 그대로 보존합니다</h3><p>이전 세대의 나방 ${state.trace.eliteIndex+1}번은 교차와 변이를 거치지 않습니다. 이 한 마리가 발견한 최고 해를 지킵니다.</p></div><div class="pattern-compare"><div><span>보존된 나방 · ${child.score.toFixed(1)}%</span><canvas data-elite width="190" height="100"></canvas></div></div>`;
       paintPatternMoth(content.querySelector('[data-elite]').getContext('2d'),95,49,child,.95,false,null);
