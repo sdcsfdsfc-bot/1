@@ -75,12 +75,12 @@ function guideVisual(frame){
 }
 function renderGuide(){
   const frames=guideFrames(),frame=frames[guideFrame];
-  $('course-part-label').textContent=`PART ${String(guidePart).padStart(2,'0')} / 03`;
+  $('course-part-label').textContent=`PART ${String(guidePart).padStart(2,'0')} / 04`;
   $('tutorial-count').textContent=`장면 ${guideFrame+1} / ${frames.length}`;
   $('tutorial-visual').innerHTML=guideVisual(frame);
   $('tutorial-coach').innerHTML=`<div class="guide-coach"><span>${frame.tag}</span><h2>${frame.title}</h2><p>${frame.coach}</p><div>${frame.hint}</div></div>`;
   $('tutorial-prev').disabled=guideFrame===0;
-  $('tutorial-next').textContent=guideFrame===frames.length-1?(guidePart===1?'2부로 이동 →':'3부 실험하기 →'):'다음 →';
+  $('tutorial-next').textContent=guideFrame===frames.length-1?(guidePart===1?'2부로 이동 →':'3부 자세히 보기 →'):'다음 →';
   const pop=frame.kind==='replace'?GUIDE_ROUNDS[frame.round].childrenAfter:GUIDE_ROUNDS[frame.round].before;
   document.querySelectorAll('[data-guide-moth]').forEach(canvas=>paintPatternMoth(canvas.getContext('2d'),75,49,pop[Number(canvas.dataset.guideMoth)],.7,false,null));
   const focus=$('guide-focus');if(focus){const chosen=pop.reduce((best,m,i)=>m.score>pop[best].score?i:best,0);paintPatternMoth(focus.getContext('2d'),125,69,pop[chosen],1.2,false,null);}
@@ -91,13 +91,22 @@ function renderGuide(){
   }
 }
 function showCoursePart(part){
-  guidePart=part;$('tutorial-page').classList.toggle('hidden',part===3);$('lab-pages').classList.toggle('hidden',part!==3);
-  for(let i=1;i<=3;i++)$('course-part-'+i).classList.toggle('active',i===part);
-  $('course-part-label').textContent=`PART ${String(part).padStart(2,'0')} / 03`;
-  if(part!==3)renderGuide();
+  stopAuto();
+  guidePart=part;$('tutorial-page').classList.toggle('hidden',part>2);$('lab-pages').classList.toggle('hidden',part<=2);
+  for(let i=1;i<=4;i++)$('course-part-'+i).classList.toggle('active',i===part);
+  $('course-part-label').textContent=`PART ${String(part).padStart(2,'0')} / 04`;
+  if(part<=2)renderGuide();
+  else{
+    const deep=part===3;
+    $('lab-part-label').textContent=deep?'PART 03 · DEEP DIVE':'PART 04 · YOUR TURN';
+    $('lab-part-title').textContent=deep?'교차·변이의 계산을 따라가 보세요.':'이제 직접 진화시켜 보세요.';
+    $('lab-part-description').textContent=deep?'한 장면씩 넘기며 부모의 숫자가 자손에게 전달되는 과정을 확인하세요.':'세대별 집단 변화를 관찰하고, 진화한 나방을 새 나무 배경에서 시험하세요.';
+    showPage(deep?'learn':'experiment');
+    if(!deep&&state.phase==='initial')step();
+  }
 }
-for(let i=1;i<=3;i++)$('course-part-'+i).addEventListener('click',()=>{guideFrame=0;showCoursePart(i);});
+for(let i=1;i<=4;i++)$('course-part-'+i).addEventListener('click',()=>{guideFrame=0;showCoursePart(i);});
 $('tutorial-prev').addEventListener('click',()=>{if(guideFrame>0){guideFrame--;renderGuide();}});
-$('tutorial-next').addEventListener('click',()=>{if(guideFrame<guideFrames().length-1){guideFrame++;renderGuide();}else{guideFrame=0;showCoursePart(Math.min(3,guidePart+1));}});
+$('tutorial-next').addEventListener('click',()=>{if(guideFrame<guideFrames().length-1){guideFrame++;renderGuide();}else{guideFrame=0;showCoursePart(Math.min(4,guidePart+1));}});
 $('tutorial-reset').addEventListener('click',()=>{guideFrame=0;renderGuide();});
 renderGuide();

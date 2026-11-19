@@ -15,7 +15,7 @@ const PATTERN_GENES = [
 ];
 const GENE_COUNT=PATTERN_GENES.length;
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-const sigmoid=x=>100/(1+Math.exp((x-42)/14));
+const sigmoid=x=>100*Math.exp(-x/28);
 function labToRgb(lab){
   const [L,a,b]=lab,fy=(L+16)/116,fx=fy+a/500,fz=fy-b/200;
   const inv=t=>t**3>.008856?t**3:(t-16/116)/7.787;
@@ -74,8 +74,8 @@ function forestSamples(forest){
       const u=(gx+.5)/9,v=(gy+.5)/6;
       if(v>1-.5*u+.12)continue;
       const px=cx+side*(7+u*62),py=cy-25+v*50;
-      let background=BARK[forest.base];
-      for(let i=forest.patches.length-1;i>=0;i--){const p=forest.patches[i];if(((px-p.x)/p.rx)**2+((py-p.y)/p.ry)**2<=1){background=BARK[p.color];break;}}
+      let background=forestColor(forest,forest.base);
+      for(let i=forest.patches.length-1;i>=0;i--){const p=forest.patches[i];if(((px-p.x)/p.rx)**2+((py-p.y)/p.ry)**2<=1){background=forestColor(forest,p.color);break;}}
       samples.push({u,v,background});
     }
   }
@@ -147,13 +147,14 @@ step=function(){
       state.trace={draws,parentWeights:state.moths.map(m=>m.score+1),parentMoths:state.parents.map(i=>clone(state.moths[i]))};state.phase='selected';break;
     }
     case 'selected':{
-      const [a,b]=state.trace.parentMoths;
       const eliteIndex=state.moths.findIndex(m=>m.score===Math.max(...state.moths.map(x=>x.score)));
       state.children=[clone(state.moths[eliteIndex])];state.children[0].mutations=[];
-      state.trace.eliteIndex=eliteIndex;state.trace.crossSources=[Array(GENE_COUNT).fill(null)];
+      state.trace.eliteIndex=eliteIndex;state.trace.crossSources=[Array(GENE_COUNT).fill(null)];state.trace.childParents=[null];state.trace.childParentIndexes=[null];
       for(let i=1;i<POP_SIZE;i++){
+        const picked=i===1?state.parents:[selectParent().index,selectParent().index],pair=picked.map(index=>clone(state.moths[index]));
+        state.trace.childParents.push(pair);state.trace.childParentIndexes.push(picked);
         const weights=Array.from({length:GENE_COUNT},()=>.15+Math.random()*.7);
-        const genes=weights.map((weight,j)=>clamp(a.genes[j]*weight+b.genes[j]*(1-weight),PATTERN_GENES[j].min,PATTERN_GENES[j].max));
+        const genes=weights.map((weight,j)=>clamp(pair[0].genes[j]*weight+pair[1].genes[j]*(1-weight),PATTERN_GENES[j].min,PATTERN_GENES[j].max));
         state.children.push({genes,score:null,mutations:[]});state.trace.crossSources.push(weights);
       }
       state.phase='crossed';break;
@@ -162,12 +163,12 @@ step=function(){
       const rate=Number($('rate').value)/100;state.trace.beforeMutation=clone(state.children);state.trace.mutationRate=rate;
       for(const child of state.children.slice(1))for(let j=0;j<GENE_COUNT;j++)if(Math.random()<rate){
         const spec=PATTERN_GENES[j],span=spec.max-spec.min;
-        const delta=(Math.random()+Math.random()+Math.random()-1.5)*span*.16;
-        child.genes[j]=clamp(child.genes[j]+delta,spec.min,spec.max);child.mutations.push(j);
+        const delta=(Math.random()+Math.random()+Math.random()-1.5)*span*.26;
+        child.genes[j]=Math.random()<.08?spec.min+Math.random()*span:clamp(child.genes[j]+delta,spec.min,spec.max);child.mutations.push(j);
       }
       state.phase='mutated';break;
     }
-    case 'mutated':state.trace.previousBest=state.best.at(-1);state.moths=state.children;state.children=[];state.parents=[];state.generation++;evaluate();state.phase=state.generation>=MAX_GENERATIONS?'finished':'replaced';if(state.phase==='finished')stopAuto();break;
+    case 'mutated':state.trace.previousBest=state.best.at(-1);state.moths=state.children;state.children=[];state.parents=[];state.generation++;evaluate();state.phase='replaced';break;
     default:stopAuto();return;
   }
   save();
@@ -175,7 +176,7 @@ step=function(){
 
 render=function(){
   const copy={initial:['초기 개체군','바탕색·무늬색·형태를 정하는 숫자 유전자를 가진 나방 12마리입니다.'],evaluated:['적합도 평가','무늬 전체의 색을 나무껍질과 비교해 점수를 계산했습니다.'],selected:['부모 선택','위장 점수로 부모 두 마리를 선택했습니다.'],crossed:['유전자 교차','부모의 대응하는 숫자 유전자를 가중평균해 자손을 만들었습니다.'],mutated:['돌연변이','일부 숫자 유전자를 조금 바꿔 무늬를 다시 그렸습니다.'],replaced:['세대 교체','자손을 평가하고 다음 세대로 넘어왔습니다.'],finished:['실험 완료','10세대의 무늬 진화를 살펴보세요.']}[state.phase];
-  $('generation').innerHTML=`${String(state.generation).padStart(2,'0')} <small>/ 10</small>`;$('phase-title').textContent=copy[0];$('phase-description').textContent=copy[1];$('tip').textContent='색과 무늬의 위치가 함께 위장 점수에 영향을 줍니다.';
+  $('generation').textContent=String(state.generation).padStart(2,'0');$('phase-title').textContent=copy[0];$('phase-description').textContent=copy[1];$('tip').textContent='색과 무늬의 위치가 함께 위장 점수에 영향을 줍니다.';
   $('previous').disabled=cursor===0;$('next').disabled=state.phase==='finished'&&cursor===history.length-1;$('scene-count').textContent=`장면 ${cursor+1} / ${history.length}`;$('scene-range').max=Math.max(0,history.length-1);$('scene-range').value=cursor;
   const stages=['평가','선택','교차','변이','교체'],active={initial:-1,evaluated:0,selected:1,crossed:2,mutated:3,replaced:4,finished:4}[state.phase];$('stage-steps').innerHTML=stages.map((s,i)=>`<span class="${i===active?'current':''}">${s}</span>`).join('');
   if(state.selected===null){$('moth-heading').textContent='나방을 선택하세요';$('moth-info').textContent='나방을 누르면 바탕색·무늬색·형태 유전자를 볼 수 있습니다.';$('genes').replaceChildren();}
@@ -187,7 +188,7 @@ renderTrace=function(){
   const phase=state.phase,stage=phase==='finished'?5:traceOrder.indexOf(phase),titles=['초기 개체군','적합도 평가','부모 선택','유전자 교차','돌연변이','세대 교체'];
   $('trace-step-number').textContent=`STEP ${String(stage+1).padStart(2,'0')}`;$('trace-title').textContent=titles[stage];$('trace-description').textContent=$('phase-description').textContent;
   $('trace-question').textContent={initial:'어느 무늬가 나무껍질에 가장 가까울까요?',evaluated:'바탕색과 무늬색이 각각 점수에 어떻게 작용할까요?',selected:'어느 나방의 숫자 유전자가 자손에게 전달될까요?',crossed:'부모의 숫자 사이에서 자손의 값은 얼마일까요?',mutated:'어떤 숫자가 바뀌어 무늬가 달라졌을까요?',replaced:'최고 점수가 높아졌을까요?',finished:'무늬와 색은 어떻게 변했을까요?'}[phase];
-  $('trace-generation').textContent=`${String(state.generation).padStart(2,'0')} / 10`;$('detail-previous').disabled=cursor===0;$('detail-next').disabled=phase==='finished'&&cursor===history.length-1;$('detail-scene-count').textContent=`장면 ${cursor+1} / ${history.length}`;$('detail-scene-range').max=Math.max(0,history.length-1);$('detail-scene-range').value=cursor;
+  $('trace-generation').textContent=`${String(state.generation).padStart(2,'0')}세대`;$('detail-previous').disabled=cursor===0;$('detail-next').disabled=phase==='finished'&&cursor===history.length-1;$('detail-scene-count').textContent=`장면 ${cursor+1} / ${history.length}`;$('detail-scene-range').max=Math.max(0,history.length-1);$('detail-scene-range').value=cursor;
   $('trace-phases').innerHTML=traceNames.map((name,i)=>`<span class="${i===stage?'current':i<stage?'passed':''}"><b>${String(i+1).padStart(2,'0')}</b>${name}</span>`).join('');
   const bestIndex=state.moths.reduce((best,m,i)=>m.score!==null&&(best<0||m.score>state.moths[best].score)?i:best,-1),picked=state.selected===null?(bestIndex<0?0:bestIndex):state.selected;
   $('trace-best').textContent=bestIndex<0?'—':`${state.moths[bestIndex].score.toFixed(1)}%`;$('trace-best-caption').textContent=bestIndex<0?'아직 평가 전입니다':`${state.generation}세대 · 나방 ${bestIndex+1}번`;$('trace-picker-hint').textContent='한 마리를 눌러 숫자 유전자와 무늬를 보세요';
@@ -199,11 +200,17 @@ renderTrace=function(){
     drawFocus(picked,m);drawPatternStages(m);
   }else if(phase==='selected'){
     const weights=state.trace.parentWeights,total=weights.reduce((a,b)=>a+b,0);
-    content.innerHTML=`<div class="trace-callout"><span class="trace-tag">SELECTION</span><h3>발견되기 어려운 무늬의 유전자가 더 자주 선택됩니다</h3><p>교육용 모형에서는 평균 RGB 차이가 작을수록 높은 점수를 주고, 점수 + 1을 추첨 가중치로 사용합니다.</p><div class="trace-parent-pair"><span>부모 A <strong>나방 ${state.parents[0]+1}</strong></span><span>부모 B <strong>나방 ${state.parents[1]+1}</strong></span></div></div><div class="trace-table-wrap"><table class="trace-table"><thead><tr><th>나방</th><th>점수</th><th>부모 선택 확률</th></tr></thead><tbody>${state.moths.map((m,i)=>`<tr class="${state.parents.includes(i)?'chosen':''}"><td>${i+1}</td><td>${m.score.toFixed(1)}%</td><td>${(100*weights[i]/total).toFixed(1)}%</td></tr>`).join('')}</tbody></table></div>`;
+    content.innerHTML=`<div class="trace-callout"><span class="trace-tag">SELECTION</span><h3>발견되기 어려운 무늬의 유전자가 더 자주 선택됩니다</h3><p>점수 + 1을 추첨 가중치로 사용합니다. 아래는 첫 자손의 부모이며, 다른 자손의 부모는 각자 다시 뽑습니다.</p><div class="trace-parent-pair"><span>부모 A <strong>나방 ${state.parents[0]+1}</strong></span><span>부모 B <strong>나방 ${state.parents[1]+1}</strong></span></div></div><div class="trace-table-wrap"><table class="trace-table"><thead><tr><th>나방</th><th>점수</th><th>부모 선택 확률</th></tr></thead><tbody>${state.moths.map((m,i)=>`<tr class="${state.parents.includes(i)?'chosen':''}"><td>${i+1}</td><td>${m.score.toFixed(1)}%</td><td>${(100*weights[i]/total).toFixed(1)}%</td></tr>`).join('')}</tbody></table></div>`;
   }else if(phase==='crossed'||phase==='mutated'){
-    const index=Math.min(Math.max(state.focusChild,0),11),child=state.children[index],before=state.trace.beforeMutation?.[index]||child,[a,b]=state.trace.parentMoths,weights=state.trace.crossSources[index];
+    const index=Math.min(Math.max(state.focusChild,0),11),child=state.children[index],before=state.trace.beforeMutation?.[index]||child,[a,b]=state.trace.childParents?.[index]||state.trace.parentMoths,weights=state.trace.crossSources[index];
+    if(index===0){
+      content.innerHTML=`<div class="trace-callout"><span class="trace-tag">ELITE</span><h3>최고 점수 나방을 그대로 보존합니다</h3><p>이전 세대의 나방 ${state.trace.eliteIndex+1}번은 교차와 변이를 거치지 않습니다. 이 한 마리가 발견한 최고 해를 지킵니다.</p></div><div class="pattern-compare"><div><span>보존된 나방 · ${child.score.toFixed(1)}%</span><canvas data-elite width="190" height="100"></canvas></div></div>`;
+      paintPatternMoth(content.querySelector('[data-elite]').getContext('2d'),95,49,child,.95,false,null);
+      return;
+    }
     content.innerHTML=`<div class="trace-callout"><span class="trace-tag">${phase==='crossed'?'CROSSOVER':'MUTATION'}</span><h3>${phase==='crossed'?'부모의 숫자를 섞어 새 그림을 만듭니다':'일부 숫자를 바꿔 다시 그립니다'}</h3><p>${phase==='crossed'?'각 유전자는 부모 A와 B의 대응하는 숫자를 가중평균합니다.':'변이는 선택된 숫자에 작은 값을 더하거나 빼며, 색과 무늬 모두 달라질 수 있습니다.'}</p></div><div class="trace-child-picker">${state.children.map((m,i)=>`<button type="button" data-child="${i}" class="${i===index?'active':''}">${i===0?'★ 보존':`자손 ${i+1}`}${phase==='mutated'&&m.mutations.length?' <i>●</i>':''}</button>`).join('')}</div>${patternInheritance(a,b,before,weights,phase==='mutated'?child:null)}<div class="pattern-compare"><div><span>부모 A</span><canvas data-compare="a" width="190" height="100"></canvas></div><div><span>부모 B</span><canvas data-compare="b" width="190" height="100"></canvas></div><div><span>교차 직후</span><canvas data-compare="before" width="190" height="100"></canvas></div>${phase==='mutated'?'<div><span>변이 후</span><canvas data-compare="after" width="190" height="100"></canvas></div>':''}</div>${phase==='mutated'?`<p class="trace-score-note">예상 점수 ${candidateScore(before).toFixed(1)}% → ${candidateScore(child).toFixed(1)}%</p>`:''}`;
     const models={a,b,before,after:child};content.querySelectorAll('[data-compare]').forEach(canvas=>{const ctx=canvas.getContext('2d');paintPatternMoth(ctx,95,49,models[canvas.dataset.compare],.95,false,null);});
+    const pair=state.trace.childParentIndexes?.[index];if(pair)content.querySelector('.trace-callout p').textContent=`자손 ${index+1}번: 부모 A는 나방 ${pair[0]+1}번, 부모 B는 나방 ${pair[1]+1}번입니다. ${phase==='crossed'?'각 숫자를 가중평균했습니다.':'변이된 숫자로 무늬를 다시 그렸습니다.'}`;
   }else{
     const previous=state.trace.previousBest,current=state.best.at(-1);content.innerHTML=`<div class="trace-callout"><span class="trace-tag">NEXT GENERATION</span><h3>${phase==='finished'?'10세대의 무늬 진화가 끝났습니다':'새로운 세대가 시작됐습니다'}</h3><p>가장 높은 점수의 나방 한 마리를 보존합니다. 무늬와 색이 함께 바뀐 자손을 다시 평가했습니다.</p></div><div class="trace-result"><div><span>이전 최고</span><strong>${previous===undefined?'—':previous.toFixed(1)+'%'}</strong></div><b>→</b><div><span>현재 최고</span><strong>${current.toFixed(1)}%</strong></div></div><div class="pattern-compare">${state.moths.map((m,i)=>({m,i})).sort((a,b)=>b.m.score-a.m.score).slice(0,3).map(({m,i})=>`<div><span>나방 ${i+1} · ${m.score.toFixed(1)}%</span><canvas data-result="${i}" width="190" height="100"></canvas></div>`).join('')}</div>`;content.querySelectorAll('[data-result]').forEach(canvas=>paintPatternMoth(canvas.getContext('2d'),95,49,state.moths[Number(canvas.dataset.result)],.95,false,null));
   }

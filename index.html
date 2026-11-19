@@ -15,6 +15,7 @@
   <script src="app.js" defer></script>
   <script src="pattern-engine.js" defer></script>
   <script src="tutorial.js" defer></script>
+  <script src="evolution-controls.js" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -23,12 +24,12 @@
   </header>
 
   <main>
-    <div class="course-heading"><p class="eyebrow">GENETIC ALGORITHM · INTERACTIVE TUTORIAL</p><h1>나방의 무늬, 어떻게 숲에 가까워질까?</h1><p>색과 무늬를 만드는 숫자가 자손에게 전달되는 과정을 12마리 나방과 함께 배워 보세요.</p><span id="course-part-label">PART 01 / 03</span></div>
-    <nav class="course-nav" aria-label="학습 파트"><button id="course-part-1" class="active" type="button">01 <strong>후보 해와 한 세대</strong></button><button id="course-part-2" type="button">02 <strong>선택 확률과 다양성</strong></button><button id="course-part-3" type="button">03 <strong>내가 직접 실험하기</strong></button></nav>
-    <section id="tutorial-page" class="tutorial-page" aria-label="단계별 튜토리얼"><div class="tutorial-top"><span id="tutorial-count">장면 1 / 16</span><button id="tutorial-reset" type="button">이 파트 처음부터 ↺</button></div><div id="tutorial-visual"></div><div id="tutorial-coach"></div><div class="tutorial-bottom"><div class="tutorial-progress-note">장면을 넘기며 같은 나방 집단의 변화를 따라가 보세요.</div><div class="tutorial-buttons"><button id="tutorial-prev" type="button">← 이전</button><button id="tutorial-next" type="button">다음 →</button></div></div><p class="tutorial-note">1·2부에서는 숫자 유전자가 무늬를 만들고 자손에게 전달되는 과정을 살펴봅니다. 3부에서는 새 숲을 만들며 직접 실험할 수 있습니다.</p></section>
-    <div id="lab-pages" class="hidden"><div class="lab-heading"><span>PART 03 · YOUR TURN</span><h2>이제 직접 실험해 보세요.</h2><p>변이 확률을 바꾸고, 전체 숲과 세부 계산을 오가며 탐색하세요.</p></div><nav class="tabs lab-tabs" aria-label="실험 화면 선택"><button id="learn-tab" class="tab active" type="button" aria-selected="true">해 찾는 과정</button><button id="experiment-tab" class="tab" type="button" aria-selected="false">전체 그림</button></nav>
+    <div class="course-heading"><p class="eyebrow">GENETIC ALGORITHM · INTERACTIVE TUTORIAL</p><h1>나방의 무늬, 어떻게 숲에 가까워질까?</h1><p>색과 무늬를 만드는 숫자가 자손에게 전달되는 과정을 12마리 나방과 함께 배워 보세요.</p><span id="course-part-label">PART 01 / 04</span></div>
+    <nav class="course-nav" aria-label="학습 파트"><button id="course-part-1" class="active" type="button">01 <strong>후보 해와 한 세대</strong></button><button id="course-part-2" type="button">02 <strong>선택 확률과 다양성</strong></button><button id="course-part-3" type="button">03 <strong>교차·변이 자세히</strong></button><button id="course-part-4" type="button">04 <strong>내가 직접 실험하기</strong></button></nav>
+    <section id="tutorial-page" class="tutorial-page" aria-label="단계별 튜토리얼"><div class="tutorial-top"><span id="tutorial-count">장면 1 / 16</span><button id="tutorial-reset" type="button">이 파트 처음부터 ↺</button></div><div id="tutorial-visual"></div><div id="tutorial-coach"></div><div class="tutorial-bottom"><div class="tutorial-progress-note">장면을 넘기며 같은 나방 집단의 변화를 따라가 보세요.</div><div class="tutorial-buttons"><button id="tutorial-prev" type="button">← 이전</button><button id="tutorial-next" type="button">다음 →</button></div></div><p class="tutorial-note">1·2부에서 원리를 배우고, 3부에서 실제 계산을 자세히 따라간 뒤 4부에서 집단 전체를 직접 진화시켜 보세요.</p></section>
+    <div id="lab-pages" class="hidden"><div class="lab-heading"><span id="lab-part-label">PART 03 · DEEP DIVE</span><h2 id="lab-part-title">교차·변이의 계산을 따라가 보세요.</h2><p id="lab-part-description">유전자가 전달되고 무늬가 바뀌는 장면을 한 단계씩 확인하세요.</p></div><nav class="tabs lab-tabs hidden" aria-label="실험 화면 선택"><button id="learn-tab" class="tab active" type="button" aria-selected="true">해 찾는 과정</button><button id="experiment-tab" class="tab" type="button" aria-selected="false">전체 그림</button></nav>
     <section id="learn-page" class="page learn-page" aria-labelledby="learn-title">
-      <div class="trace-header"><div><p class="eyebrow">HOW A SOLUTION IS FOUND</p><h1 id="learn-title">해를 찾는 과정<span class="heading-dot">.</span></h1><p>무늬를 만드는 숫자가 어떻게 전달되고 바뀌는지 실제 계산값으로 따라가 보세요. 한 장면씩 넘기면 선택, 교차, 변이를 볼 수 있습니다.</p></div><button id="start-experiment" class="secondary" type="button">전체 그림 보기 ↗</button></div>
+      <div class="trace-header"><div><p class="eyebrow">HOW A SOLUTION IS FOUND</p><h1 id="learn-title">해를 찾는 과정<span class="heading-dot">.</span></h1><p>무늬를 만드는 숫자가 어떻게 전달되고 바뀌는지 실제 계산값으로 따라가 보세요. 한 장면씩 넘기면 선택, 교차, 변이를 볼 수 있습니다.</p></div><button id="start-experiment" class="secondary" type="button">직접 실험하기 ↗</button></div>
       <div class="trace-toolbar"><button id="detail-previous" class="secondary" type="button">← 이전 장면</button><button id="detail-next" class="primary" type="button">다음 장면 →</button><button id="detail-auto" class="secondary" type="button">자동 진행 ▷</button><button id="detail-reset" class="secondary" type="button">새로운 숲 ↻</button><label class="trace-rate" for="detail-rate">변이 확률 <strong id="detail-rate-value">12%</strong><input id="detail-rate" type="range" min="0" max="50" value="12" step="1"></label></div>
       <div class="trace-scrubber"><span id="detail-scene-count" class="trace-counter">장면 1 / 1</span><input id="detail-scene-range" type="range" min="0" max="0" value="0" aria-label="장면 이동"></div>
       <div id="trace-phases" class="trace-phases" aria-label="해를 찾는 순서"></div>
@@ -44,12 +45,13 @@
     <section id="experiment-page" class="page experiment-page hidden" aria-labelledby="experiment-title">
       <div class="experiment-heading"><div><p class="eyebrow">THE WHOLE PICTURE</p><h1 id="experiment-title">전체 그림</h1><p>숲속의 12마리, 세대별 점수, 가장 잘 숨는 나방을 한눈에 보세요.</p></div><div class="generation-badge"><span>현재 세대</span><strong id="generation">01 <small>/ 10</small></strong></div></div>
       <div class="toolbar" role="group" aria-label="실험 조작">
-        <button id="previous" class="secondary" type="button">← 이전 장면</button>
-        <button id="next" class="primary" type="button">다음 장면 →</button>
+        <button id="previous" class="secondary" type="button">← 이전 세대</button>
+        <button id="next" class="primary" type="button">다음 세대 →</button>
         <button id="auto" class="secondary" type="button">자동 진행 ▷</button>
-        <button id="reset" class="secondary" type="button">새로운 숲 ↻</button>
+        <button id="reset" class="secondary" type="button">처음부터 ↻</button>
         <label class="rate-control" for="rate">변이 확률 <strong id="rate-value">12%</strong><input id="rate" type="range" min="0" max="50" value="12" step="1"></label>
       </div>
+      <div class="environment-controls"><div><strong>나무 배경 바꾸기</strong><p>진화한 나방 12마리를 그대로 두고 새 배경에서 다시 평가합니다.</p></div><label>나무 색<select id="bark-theme"><option value="natural">기본 갈색</option><option value="light">밝은 나무</option><option value="dark">어두운 나무</option><option value="moss">이끼 낀 나무</option></select></label><label>나무 무늬<select id="bark-pattern"><option value="normal">보통</option><option value="smooth">매끈함</option><option value="rough">거친 반점</option></select></label><button id="change-background" class="secondary" type="button">이 집단으로 새 배경에서 시작 ↗</button></div>
       <div class="stage-strip"><div><span class="stage-label">현재 단계</span><strong id="phase-title">초기 개체군</strong><p id="phase-description">12마리의 나방이 무작위 유전자를 가지고 태어났습니다.</p></div><div id="stage-steps" class="stage-steps" aria-label="진행 단계"></div></div>
       <div class="content-grid"><div class="forest-card"><div class="panel-title"><h2>숲에서 살아남기</h2><span>나방을 눌러 유전자 확인</span></div><canvas id="forest" width="1100" height="700" role="img" aria-label="나무껍질 위에 놓인 나방 12마리"></canvas><div class="forest-footer"><span id="scene-count">장면 1 / 1</span><input id="scene-range" aria-label="장면 이동" type="range" min="0" max="0" value="0"></div></div>
       <aside class="sidebar"><div class="info-card"><p class="eyebrow">SELECTED MOTH</p><h2 id="moth-heading">나방을 선택하세요</h2><p id="moth-info">나방을 누르면 무늬를 만드는 숫자 유전자와 위장 점수를 볼 수 있습니다.</p><div id="genes" class="genes"></div></div><div class="info-card chart-card"><p class="eyebrow">FITNESS OVER TIME</p><h2>세대별 위장 점수</h2><canvas id="chart" width="460" height="240" role="img" aria-label="세대별 최고 점수와 평균 점수 그래프"></canvas><div class="legend"><span><i class="best-key"></i> 최고 점수</span><span><i class="avg-key"></i> 평균 점수</span></div></div><div class="info-card tip-card"><p class="eyebrow">생각해 보기</p><p id="tip">색과 무늬의 위치가 함께 위장 점수에 영향을 줍니다.</p></div></aside></div>

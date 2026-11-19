@@ -28,8 +28,9 @@ let state, history=[], cursor=0, autoTimer=null;
 
 function moth(){return {colors:Array.from({length:6},()=>rnd(PALETTE.length)),spots:2+rnd(5),score:null,mutations:[]};}
 function position(i){return [155+(i%6)*158,195+Math.floor(i/6)*195];}
-function makeForest(){const patches=[],leaves=[];for(let i=0;i<180;i++){const x=95+Math.random()*910,y=125+Math.random()*540,rx=15+rnd(38),ry=12+rnd(27);const left=110-(y-80)*100/620,right=990+(y-80)*100/620;if(x>left+rx+10&&x<right-rx-10)patches.push({x,y,rx,ry,color:rnd(BARK.length)});}for(let i=0;i<38;i++){const x=35+rnd(1031),y=-55+rnd(281),rx=18+rnd(38),ry=15+rnd(24);if(((x-550)/515)**2+((y-70)/165)**2<=1)leaves.push({x,y,rx,ry,color:rnd(LEAVES.length)});}return {base:rnd(BARK.length),patches,leaves};}
-function treeColor(x,y){for(let i=state.forest.patches.length-1;i>=0;i--){const p=state.forest.patches[i];if(((x-p.x)/p.rx)**2+((y-p.y)/p.ry)**2<=1)return BARK[p.color];}return BARK[state.forest.base];}
+function makeForest(theme='natural',pattern='normal'){const patches=[],leaves=[],count={smooth:35,normal:150,rough:260}[pattern]||150;for(let i=0;i<count;i++){const x=95+Math.random()*910,y=125+Math.random()*540,rx=pattern==='rough'?9+rnd(28):18+rnd(42),ry=pattern==='rough'?8+rnd(22):13+rnd(31);const left=110-(y-80)*100/620,right=990+(y-80)*100/620;if(x>left+rx+10&&x<right-rx-10)patches.push({x,y,rx,ry,color:rnd(BARK.length)});}for(let i=0;i<38;i++){const x=35+rnd(1031),y=-55+rnd(281),rx=18+rnd(38),ry=15+rnd(24);if(((x-550)/515)**2+((y-70)/165)**2<=1)leaves.push({x,y,rx,ry,color:rnd(LEAVES.length)});}return {base:3,patches,leaves,theme,pattern};}
+function forestColor(f,index){return BARK[index];}
+function treeColor(x,y){for(let i=state.forest.patches.length-1;i>=0;i--){const p=state.forest.patches[i];if(((x-p.x)/p.rx)**2+((y-p.y)/p.ry)**2<=1)return forestColor(state.forest,p.color);}return forestColor(state.forest,state.forest.base);}
 function sampleDetails(m,i){
   const groups=Array.from({length:6},()=>({total:0,channels:0,samples:0,background:[0,0,0]}));
   for(let slot=0;slot<POP_SIZE;slot++)for(const side of [-1,1])for(let px=0;px<72;px+=4)for(let py=0;py<36;py+=3){
@@ -183,12 +184,12 @@ function showPage(which){const learn=which==='learn';$('learn-page').classList.t
 function setupLessons(){const cards=$('lesson-cards');LESSONS.forEach(([title,short],i)=>{const button=document.createElement('button');button.type='button';button.className='lesson-card';button.innerHTML=`<span class="num">STEP ${String(i+1).padStart(2,'0')}</span><strong>${title}</strong><span>${short}</span>`;button.addEventListener('click',()=>{[...cards.children].forEach((b,j)=>b.classList.toggle('active',i===j));$('lesson-detail').innerHTML=`<strong>${title}</strong><p>${LESSONS[i][2]}</p>`;});cards.append(button);});cards.firstChild.click();}
 $('learn-tab').addEventListener('click',()=>showPage('learn'));
 $('experiment-tab').addEventListener('click',()=>showPage('experiment'));
-$('start-experiment').addEventListener('click',()=>showPage('experiment'));
-$('previous').addEventListener('click',()=>{stopAuto();restore(cursor-1);});
-$('next').addEventListener('click',()=>step());
-$('reset').addEventListener('click',reset);
+$('start-experiment').addEventListener('click',()=>{if(typeof showCoursePart==='function')showCoursePart(4);else showPage('experiment');});
+$('previous').addEventListener('click',()=>{stopAuto();if(typeof previousGeneration==='function')previousGeneration();else restore(cursor-1);});
+$('next').addEventListener('click',()=>{if(typeof advanceGeneration==='function')advanceGeneration();else step();});
+$('reset').addEventListener('click',()=>{if(typeof resetExperiment==='function')resetExperiment();else reset();});
 function toggleAuto(){if(autoTimer){stopAuto();return;}$('auto').textContent='일시정지 Ⅱ';$('detail-auto').textContent='일시정지 Ⅱ';autoTimer=setInterval(()=>{if(state.phase==='finished'&&cursor===history.length-1){stopAuto();return;}step();},700);}
-$('auto').addEventListener('click',toggleAuto);
+$('auto').addEventListener('click',()=>{if(typeof toggleGenerationAuto==='function')toggleGenerationAuto();else toggleAuto();});
 $('detail-previous').addEventListener('click',()=>{stopAuto();restore(cursor-1);});
 $('detail-next').addEventListener('click',()=>step());
 $('detail-reset').addEventListener('click',reset);
