@@ -97,8 +97,9 @@ function patternGeneRows(m){
   const [base,mark]=geneColors(m);
   return `<div class="pattern-color-pair"><span><i style="background:${rgb(base)}"></i>바탕색 ${rgb(base)}</span><span><i style="background:${rgb(mark)}"></i>무늬색 ${rgb(mark)}</span></div><div class="trace-gene-list">${PATTERN_GENES.map((spec,j)=>`<div class="trace-gene-row"><span>${spec.name}</span><strong>${geneDisplay(m,j)}</strong></div>`).join('')}</div>`;
 }
-function patternInheritance(a,b,before,weights,after=null){
-  return `<div class="pattern-inheritance"><p><strong>같은 종류의 숫자끼리 교차합니다.</strong> 자손 = A × A의 비율 + B × B의 비율</p><div class="trace-table-wrap"><table class="trace-table"><thead><tr><th>유전자</th><th>부모 A</th><th>부모 B</th><th>A 비율</th><th>교차 직후</th>${after?'<th>변이 후</th>':''}</tr></thead><tbody>${PATTERN_GENES.map((spec,j)=>`<tr class="${after?.mutations?.includes(j)?'chosen':''}"><td>${spec.name}</td><td>${geneDisplay(a,j)}</td><td>${geneDisplay(b,j)}</td><td>${weights[j]===null?'보존':`${Math.round(weights[j]*100)}%`}</td><td>${geneDisplay(before,j)}</td>${after?`<td>${geneDisplay(after,j)}${after.mutations.includes(j)?' ●':''}</td>`:''}</tr>`).join('')}</tbody></table></div></div>`;
+function patternInheritance(a,b,before,weights,after=null,indices=null){
+  const shown=indices||PATTERN_GENES.map((_,j)=>j);
+  return `<div class="pattern-inheritance"><p><strong>${after?'교차 직후 값과 변이 후 값을 비교합니다.':'같은 종류의 숫자끼리 교차합니다.'}</strong> 자손 = A × A의 비율 + B × B의 비율</p><div class="trace-table-wrap"><table class="trace-table"><thead><tr><th>유전자</th><th>부모 A</th><th>부모 B</th><th>A 비율</th><th>교차 직후</th>${after?'<th>변이 후</th>':''}</tr></thead><tbody>${shown.map(j=>{const spec=PATTERN_GENES[j];return `<tr class="${after?.mutations?.includes(j)?'chosen':''}"><td>${spec.name}</td><td>${geneDisplay(a,j)}</td><td>${geneDisplay(b,j)}</td><td>${weights[j]===null?'보존':`${Math.round(weights[j]*100)}%`}</td><td>${geneDisplay(before,j)}</td>${after?`<td>${geneDisplay(after,j)}${after.mutations.includes(j)?' ●':''}</td>`:''}</tr>`;}).join('')}</tbody></table></div></div>`;
 }
 function paintWing(ctx,m,colors){
   ctx.save();mothWingPath(ctx);ctx.clip();

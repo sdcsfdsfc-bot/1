@@ -184,7 +184,7 @@ function showPage(which){const learn=which==='learn';$('learn-page').classList.t
 function setupLessons(){const cards=$('lesson-cards');LESSONS.forEach(([title,short],i)=>{const button=document.createElement('button');button.type='button';button.className='lesson-card';button.innerHTML=`<span class="num">STEP ${String(i+1).padStart(2,'0')}</span><strong>${title}</strong><span>${short}</span>`;button.addEventListener('click',()=>{[...cards.children].forEach((b,j)=>b.classList.toggle('active',i===j));$('lesson-detail').innerHTML=`<strong>${title}</strong><p>${LESSONS[i][2]}</p>`;});cards.append(button);});cards.firstChild.click();}
 $('learn-tab').addEventListener('click',()=>showPage('learn'));
 $('experiment-tab').addEventListener('click',()=>showPage('experiment'));
-$('start-experiment').addEventListener('click',()=>{if(typeof showCoursePart==='function')showCoursePart(4);else showPage('experiment');});
+$('start-experiment').addEventListener('click',()=>{if(typeof showCoursePart==='function')showCoursePart(2);else showPage('experiment');});
 $('previous').addEventListener('click',()=>{stopAuto();if(typeof previousGeneration==='function')previousGeneration();else restore(cursor-1);});
 $('next').addEventListener('click',()=>{if(typeof advanceGeneration==='function')advanceGeneration();else step();});
 $('reset').addEventListener('click',()=>{if(typeof resetExperiment==='function')resetExperiment();else reset();});
