@@ -50,7 +50,7 @@ drawChart=function(){
   const canvas=$('chart'),ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height,l=55,r=w-22,t=24,b=h-42;
   ctx.clearRect(0,0,w,h);ctx.font='12px sans-serif';
   const count=state.best.length;
-  if(!count){$('chart-summary').textContent='첫 세대를 평가하면 변화가 기록됩니다.';$('chart-scale').textContent='전체 세대 · 점수 범위';$('chart-exploration').textContent='점수가 정체되면 변이와 새로운 후보로 다른 무늬를 탐색합니다.';return;}
+  if(!count){$('chart-summary').textContent='첫 세대를 평가하면 변화가 기록됩니다.';$('chart-scale').textContent='전체 세대 · 점수 범위';$('chart-exploration').textContent=`다음 세대 변이 확률 ${$('rate').value}% · 선택값과 동일`;return;}
   const values=[...state.best,...state.avg],minimum=Math.min(...values),maximum=Math.max(...values),padding=Math.max(5,(maximum-minimum)*.16);
   let lower=Math.max(0,Math.floor((minimum-padding)/5)*5),upper=Math.min(100,Math.ceil((maximum+padding)/5)*5);
   if(upper-lower<10){lower=Math.max(0,lower-5);upper=Math.min(100,upper+5);}
@@ -70,14 +70,10 @@ drawChart=function(){
     series.forEach((value,i)=>{const x=xAt(i),y=yAt(value);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();
     if(count<=65)series.forEach((value,i)=>ellipse(ctx,xAt(i),yAt(value),3.3,3.3,color));
   }
-  const initial=state.best[0],latest=state.best.at(-1),gain=latest-initial,stalled=stalledGenerations(state.best),baseRate=Number($('rate').value)/100;
+  const initial=state.best[0],latest=state.best.at(-1),gain=latest-initial,stalled=stalledGenerations(state.best),rate=Number($('rate').value);
   $('chart-summary').textContent=`${count}세대 전체 기록 · 첫 최고 ${initial.toFixed(1)}% → 현재 최고 ${latest.toFixed(1)}% · 변화 ${gain>=0?'+':''}${gain.toFixed(1)}%p`;
   $('chart-scale').textContent=`세로축 ${lower}~${upper}%로 확대 · 가로축은 세대`;
-  if(stalled>=4&&baseRate>0){
-    const rate=Math.min(.5,baseRate+Math.min(.16,.04*Math.floor(stalled/4)));
-    const newcomers=stalled>=6?Math.min(4,1+Math.floor((stalled-6)/5)):0;
-    $('chart-exploration').textContent=`최고 점수 ${stalled}세대 정체 · 다음 세대 변이 ${Math.round(rate*100)}%${newcomers?` · 새 후보 ${newcomers}마리 투입`:''}`;
-  }else $('chart-exploration').textContent=stalled?`최고 점수 ${stalled}세대 유지 · 최고 나방은 보존합니다.`:'최고 점수가 새로 개선됐습니다.';
+  $('chart-exploration').textContent=`다음 세대 변이 확률 ${$('rate').value}% · 선택값과 동일${stalled>=4&&rate>0?` · ${stalled}세대 정체로 변이 폭만 확대`:''}`;
 };
 
 function advanceGeneration(){

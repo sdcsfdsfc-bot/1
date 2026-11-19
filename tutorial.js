@@ -21,7 +21,7 @@ function makeGuideRounds(){
       childrenBefore.push(guideEvaluate({genes,mutations:[]}));sources.push(mix);
     }
     const childrenAfter=childrenBefore.map(guideClone),mutations=[];
-    for(let i=1;i<12;i++)for(let j=0;j<GENE_COUNT;j++)if(guideRandom()<.12){
+    for(let i=1;i<12;i++)for(let j=0;j<GENE_COUNT;j++)if(guideRandom()<.05){
       const spec=PATTERN_GENES[j],old=childrenAfter[i].genes[j],span=spec.max-spec.min,delta=(guideRandom()+guideRandom()+guideRandom()-1.5)*span*.26;
       const reroll=guideRandom()<.08;
       childrenAfter[i].genes[j]=reroll?spec.min+guideRandom()*span:clamp(old+delta,spec.min,spec.max);childrenAfter[i].mutations.push(j);mutations.push({child:i,gene:j,old,next:childrenAfter[i].genes[j],reroll});
